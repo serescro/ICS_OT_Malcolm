@@ -3,16 +3,53 @@ renamed_environment_variable_files:
   #   source_env_file
   postgres:
     netbox_postgres
+  filescan_secret:
+    zeek_secret
 copied_environment_variables:
   # destination_env_file:
   #   source_env_file:
   #     destination_key:
   #       source_key:
   #         "source_value": destination_value
+  arkime_offline:
+    arkime:
+      ARKIME_ALLOW_WISE_GUI_CONFIG:
+        ARKIME_ALLOW_WISE_GUI_CONFIG
+      ARKIME_EXPOSE_WISE_GUI:
+        ARKIME_EXPOSE_WISE_GUI:
+          "false": "true"
   auth_common:
     auth_common:
       NGINX_AUTH_MODE:
         NGINX_BASIC_AUTH
+  filescan:
+    zeek:
+      FILESCAN_HTTP_SERVER_ZIP:
+        EXTRACTED_FILE_HTTP_SERVER_ZIP
+      FILESCAN_HTTP_SERVER_MAGIC:
+        EXTRACTED_FILE_HTTP_SERVER_MAGIC
+      FILESCAN_HTTP_SERVER_ENABLE:
+        EXTRACTED_FILE_HTTP_SERVER_ENABLE
+      FILESCAN_PRUNE_THRESHOLD_MAX_SIZE:
+        EXTRACTED_FILE_PRUNE_THRESHOLD_MAX_SIZE
+      FILESCAN_PRUNE_THRESHOLD_TOTAL_DISK_USAGE_PERCENT:
+        EXTRACTED_FILE_PRUNE_THRESHOLD_TOTAL_DISK_USAGE_PERCENT
+      FILESCAN_PRUNE_INTERVAL_SECONDS:
+        EXTRACTED_FILE_PRUNE_INTERVAL_SECONDS
+      FILESCAN_PRESERVATION:
+        EXTRACTED_FILE_PRESERVATION
+  filescan_secret:
+    filescan_secret:
+      FILESCAN_HTTP_SERVER_KEY:
+        EXTRACTED_FILE_HTTP_SERVER_KEY
+  logstash:
+    logstash:
+      LOGSTASH_NETBOX_ENRICHMENT_DATASETS:
+        LOGSTASH_NETBOX_ENRICHMENT_DATASETS:
+          ? "suricata.alert,zeek.conn,zeek.dhcp,zeek.dns,zeek.known_hosts,zeek.known_services,zeek.ntlm,zeek.notice,zeek.signatures,zeek.software,zeek.weird"
+          : "filescan.strelka,suricata.alert,zeek.conn,zeek.dce_rpc,zeek.dhcp,zeek.dns,zeek.known_hosts,zeek.known_routers,zeek.known_services,zeek.login,zeek.ntlm,zeek.notice,zeek.rdp,zeek.rfb,zeek.signatures,zeek.smb_cmd,zeek.smb_files,zeek.smb_mapping,zeek.software,zeek.ssh,zeek.weird"
+          ? "suricata.alert,zeek.conn,zeek.dce_rpc,zeek.dhcp,zeek.dns,zeek.known_hosts,zeek.known_routers,zeek.known_services,zeek.login,zeek.ntlm,zeek.notice,zeek.rdp,zeek.rfb,zeek.signatures,zeek.smb_cmd,zeek.smb_files,zeek.smb_mapping,zeek.software,zeek.ssh,zeek.weird"
+          : "filescan.strelka,suricata.alert,zeek.conn,zeek.dce_rpc,zeek.dhcp,zeek.dns,zeek.known_hosts,zeek.known_routers,zeek.known_services,zeek.login,zeek.ntlm,zeek.notice,zeek.rdp,zeek.rfb,zeek.signatures,zeek.smb_cmd,zeek.smb_files,zeek.smb_mapping,zeek.software,zeek.ssh,zeek.weird"
   netbox:
     netbox:
       REMOTE_AUTH_HEADER:
@@ -78,6 +115,12 @@ copied_environment_variables:
     arkime:
       CLUSTER_MAX_SHARDS_PER_NODE:
         OPENSEARCH_MAX_SHARDS_PER_NODE
+  pipeline:
+    zeek:
+      YARA_CUSTOM_RULES_ONLY:
+        EXTRACTED_FILE_YARA_CUSTOM_ONLY
+      RULES_UPDATE_ENABLED:
+        EXTRACTED_FILE_UPDATE_RULES
   postgres:
     netbox:
       DB_HOST:
@@ -105,6 +148,10 @@ copied_environment_variables:
       REDIS_CACHE_HOST:
         REDIS_CACHE_HOST:
           "netbox-redis-cache": redis-cache
+      REDIS_NETBOX_DATABASE:
+        REDIS_DATABASE
+      REDIS_NETBOX_CACHE_DATABASE:
+        REDIS_CACHE_DATABASE
     netbox_secret:
       REDIS_PASSWORD:
         REDIS_PASSWORD
@@ -114,6 +161,8 @@ removed_environment_variables:
   #   - key2
   arkime:
     - OPENSEARCH_MAX_SHARDS_PER_NODE
+    - ARKIME_EXPOSE_WISE_GUI
+    - ARKIME_ALLOW_WISE_GUI_CONFIG
   arkime_live:
     - VIEWER
   arkime_offline:
@@ -145,6 +194,8 @@ removed_environment_variables:
     - DB_NAME
     - REDIS_CACHE_HOST
     - REDIS_HOST
+    - REDIS_CACHE_DATABASE
+    - REDIS_DATABASE
     - REMOTE_AUTH_STAFF_USERS
     - REMOTE_AUTH_SUPERUSERS
   netbox_redis_cache:
@@ -161,8 +212,35 @@ removed_environment_variables:
     - DB_PASSWORD
   suricata_offline:
     - SURICATA_PCAP_PROCESSOR
+  zeek:
+    - CAPA_MAX_REQUESTS
+    - CLAMD_MAX_REQUESTS
+    - EXTRACTED_FILE_CAPA_VERBOSE
+    - EXTRACTED_FILE_ENABLE_CAPA
+    - EXTRACTED_FILE_ENABLE_CLAMAV
+    - EXTRACTED_FILE_ENABLE_VTOT
+    - EXTRACTED_FILE_ENABLE_YARA
+    - EXTRACTED_FILE_HTTP_SERVER_ENABLE
+    - EXTRACTED_FILE_HTTP_SERVER_MAGIC
+    - EXTRACTED_FILE_HTTP_SERVER_RECURSIVE
+    - EXTRACTED_FILE_HTTP_SERVER_RECURSIVE
+    - EXTRACTED_FILE_HTTP_SERVER_ZIP
+    - EXTRACTED_FILE_IGNORE_EXISTING
+    - EXTRACTED_FILE_MIN_BYTES
+    - EXTRACTED_FILE_PIPELINE_VERBOSITY
+    - EXTRACTED_FILE_PRESERVATION
+    - EXTRACTED_FILE_PRUNE_INTERVAL_SECONDS
+    - EXTRACTED_FILE_PRUNE_THRESHOLD_MAX_SIZE
+    - EXTRACTED_FILE_PRUNE_THRESHOLD_TOTAL_DISK_USAGE_PERCENT
+    - EXTRACTED_FILE_WATCHER_POLLING
+    - EXTRACTED_FILE_WATCHER_POLLING_ASSUME_CLOSED_SEC
+    - EXTRACTED_FILE_YARA_CUSTOM_ONLY
+    - VTOT_REQUESTS_PER_MINUTE
+    - YARA_MAX_REQUESTS
   zeek_offline:
     - ZEEK_PCAP_PROCESSOR
+  zeek_secret:
+    - VTOT_API2_KEY
 relocated_files:
   # Files/directories to relocate (relative to Malcolm installation directory)
   # Only occurs if Malcolm is not running, source exists, and destination does not.

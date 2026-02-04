@@ -1,11 +1,11 @@
 FROM ghcr.io/mmguero/qemu-live-iso:latest
 
-# Copyright (c) 2025 Battelle Energy Alliance, LLC.  All rights reserved.
+# Copyright (c) 2026 Battelle Energy Alliance, LLC.  All rights reserved.
 
 LABEL maintainer="malcolm@inl.gov"
 LABEL org.opencontainers.image.authors='malcolm@inl.gov'
 LABEL org.opencontainers.image.url='https://github.com/idaholab/Malcolm'
-LABEL org.opencontainers.image.documentation='https://github.com/idaholab/Malcolm/blob/main/hedgehog-iso/README.md'
+LABEL org.opencontainers.image.documentation='https://idaholab.github.io/Malcolm/docs/hedgehog-raspi-build.html'
 LABEL org.opencontainers.image.source='https://github.com/idaholab/Malcolm'
 LABEL org.opencontainers.image.vendor='Idaho National Laboratory'
 LABEL org.opencontainers.image.title='ghcr.io/idaholab/malcolm/hedgehog-raspi'

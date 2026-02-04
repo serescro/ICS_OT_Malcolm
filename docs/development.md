@@ -14,10 +14,9 @@ Checking out the [Malcolm source code]({{ site.github.repository_url }}/tree/{{ 
 * `Dockerfiles` - a directory containing build instructions for Malcolm's images
 * `docs` - a directory containing instructions and documentation
 * `filebeat` - code and configuration for the `filebeat` container that ingests Zeek logs and forwards them to the `logstash` container
-* `file-monitor` - code and configuration for the `file-monitor` container that can scan files extracted by Zeek
+* `filescan` - code and configuration for the `filescan` container that can scan files extracted by Zeek
 * `file-upload` - code and configuration for the `upload` container that serves a web browser-based upload form for uploading PCAP files and Zeek logs, and serves an SFTP share as an alternate upload
 * `freq-server` - code and configuration for the `freq` container used for calculating entropy of strings
-* `hedgehog-iso` - code and configuration for building a [Hedgehog Linux](live-analysis.md#Hedgehog) ISO
 * `hedgehog-raspi` - code and configuration for building a [Hedgehog Linux](live-analysis.md#Hedgehog) [Raspberry Pi image](hedgehog-raspi-build.md#HedgehogRaspiBuild)
 * `htadmin` - configuration for the `htadmin` user account management container
 * `logstash` - code and configuration for the `logstash` container that parses Zeek logs and forwards them to the `opensearch` container
@@ -33,6 +32,7 @@ Checking out the [Malcolm source code]({{ site.github.repository_url }}/tree/{{ 
 * `redis` - an initially empty directory where the Redis database runtime files will reside
 * `scripts` - control scripts for starting, stopping, restarting, etc., Malcolm
 * `shared` - miscellaneous code used by various Malcolm components 
+* `strelka` - code for the `strelka-` containers used in by `filescan` for file scanning
 * `suricata` - code and configuration for the `suricata` container that handles PCAP processing using Suricata
 * `suricata-logs` - an initially empty directory for Suricata logs to be uploaded, processed, and stored
 * `yara` - a directory for custom user-provided YARA rules
@@ -60,7 +60,10 @@ Then, go take a walk or something since it will be a while. When you are done, y
 * `ghcr.io/idaholab/malcolm/arkime` (based on `debian:13-slim`)
 * `ghcr.io/idaholab/malcolm/dashboards-helper` (based on `debian:13-slim`)
 * `ghcr.io/idaholab/malcolm/dashboards` (based on `opensearchproject/opensearch-dashboards`)
-* `ghcr.io/idaholab/malcolm/file-monitor` (based on `debian:13-slim`)
+* `ghcr.io/idaholab/malcolm/filescan` (based on `python:3`)
+* `ghcr.io/idaholab/malcolm/strelka-backend` (based on `ghcr.io/idaholab/strelka/strelka-backend:malcolm`)
+* `ghcr.io/idaholab/malcolm/strelka-manager` (based on `ghcr.io/idaholab/strelka/strelka-manager:malcolm`)
+* `ghcr.io/idaholab/malcolm/strelka-frontend` (based on `ghcr.io/idaholab/strelka/strelka-frontend:malcolm`)
 * `ghcr.io/idaholab/malcolm/file-upload` (based on `debian:13-slim`)
 * `ghcr.io/idaholab/malcolm/filebeat-oss` (based on `docker.elastic.co/beats/filebeat-oss`)
 * `ghcr.io/idaholab/malcolm/freq` (based on `debian:13-slim`)
@@ -68,14 +71,14 @@ Then, go take a walk or something since it will be a while. When you are done, y
 * `ghcr.io/idaholab/malcolm/keycloak` (based on `quay.io/keycloak/keycloak:26.1`)
 * `ghcr.io/idaholab/malcolm/logstash-oss` (based on `docker.elastic.co/logstash/logstash-oss`)
 * `ghcr.io/idaholab/malcolm/netbox` (based on `netboxcommunity/netbox:latest`)
-* `ghcr.io/idaholab/malcolm/nginx-proxy` (based on `alpine:3.22`)
+* `ghcr.io/idaholab/malcolm/nginx-proxy` (based on `alpine:3.23`)
 * `ghcr.io/idaholab/malcolm/opensearch` (based on `opensearchproject/opensearch`)
 * `ghcr.io/idaholab/malcolm/pcap-capture` (based on `debian:13-slim`)
 * `ghcr.io/idaholab/malcolm/pcap-monitor` (based on `debian:13-slim`)
 * `ghcr.io/idaholab/malcolm/postgresql` (based on `postgres:16-alpine`)
 * `ghcr.io/idaholab/malcolm/redis` (based on `redis:7-alpine`)
 * `ghcr.io/idaholab/malcolm/suricata` (based on `debian:13-slim`)
-* `ghcr.io/idaholab/malcolm/zeek` (based on `debian:13-slim`)
+* `ghcr.io/idaholab/malcolm/zeek` (based on `zeek/zeek`)
 
 Alternately, if you have forked Malcolm on GitHub, [workflow files]({{ site.github.repository_url }}/tree/{{ site.github.build_revision }}/.github/workflows/) are provided that contain instructions for GitHub to build the images, as well as [sensor](live-analysis.md#Hedgehog) and [Malcolm](malcolm-iso.md#ISO) installer ISOs. The resulting images are named according to the pattern `ghcr.io/owner/malcolm/image:branch` (e.g., if you have forked Malcolm with the GitHub user `romeogdetlevjr`, the `Arkime` container built for the `main` branch would be named `ghcr.io/romeogdetlevjr/malcolm/arkime:main`). To run your local instance of Malcolm using these images instead of the official ones, you will need to edit your `docker-compose.yml` file(s) and replace the `image:` tags according to this new pattern, or use the bash helper script `./shared/bin/github_image_helper.sh` to pull and re-tag the images.
 
@@ -116,7 +119,6 @@ $ ls -lh
 total 4.0G
 drwxrwxr-x 10 user user  156 Oct 29 17:22 installer
 -rwxrwxr-x  1 user user  44K Oct 29 17:22 install.py
--rwxrwxr-x  1 user user 236K Oct 29 17:22 legacy_install.py
 -rw-rw-r--  1 user user  460 Oct 29 17:22 malcolm_20251029_140727_d22a504f.README.txt
 -rw-rw-r--  1 user user 270K Oct 29 17:22 malcolm_20251029_140727_d22a504f.tar.gz
 -rw-rw-r--  1 user user   4G Oct 29 17:22 malcolm_20251029_140727_d22a504f_images.tar.xz

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2025 Battelle Energy Alliance, LLC.  All rights reserved.
+# Copyright (c) 2026 Battelle Energy Alliance, LLC.  All rights reserved.
 
 """
 Configuration key constants for Malcolm
@@ -25,11 +25,18 @@ KEY_CONFIG_ITEM_TWEAK_IFACE = "tweakIface"
 KEY_CONFIG_ITEM_CAPTURE_STATS = "captureStats"
 KEY_CONFIG_ITEM_LIVE_ARKIME = "liveArkime"
 KEY_CONFIG_ITEM_LIVE_ARKIME_NODE_HOST = "liveArkimeNodeHost"
+KEY_CONFIG_ITEM_LIVE_ARKIME_COMP_TYPE = "liveArkimeCompressionType"
+KEY_CONFIG_ITEM_LIVE_ARKIME_COMP_LEVEL = "liveArkimeCompressionLevel"
 KEY_CONFIG_ITEM_PCAP_NETSNIFF = "pcapNetSniff"
 KEY_CONFIG_ITEM_PCAP_TCPDUMP = "pcapTcpDump"
 KEY_CONFIG_ITEM_LIVE_ZEEK = "liveZeek"
 KEY_CONFIG_ITEM_LIVE_SURICATA = "liveSuricata"
 KEY_CONFIG_ITEM_PCAP_NODE_NAME = "pcapNodeName"
+KEY_CONFIG_ITEM_EXTRA_TAGS = "extraTags"
+KEY_CONFIG_ITEM_ARKIME_EXPOSE_WISE = "arkimeExposeWise"
+KEY_CONFIG_ITEM_ARKIME_ALLOW_WISE_CONFIG = "arkimeAllowWiseConfig"
+KEY_CONFIG_ITEM_ARKIME_EXPOSE_WISE = "arkimeExposeWise"
+KEY_CONFIG_ITEM_ARKIME_WISE_URL = "arkimeWiseUrl"
 
 # Docker options
 KEY_CONFIG_ITEM_MALCOLM_RESTART_POLICY = "malcolmRestartPolicy"
@@ -47,17 +54,14 @@ KEY_CONFIG_ITEM_FILEBEAT_TCP_PARSE_DROP_FIELD = "filebeatTcpParseDropField"
 KEY_CONFIG_ITEM_FILEBEAT_TCP_TAG = "filebeatTcpTag"
 
 # File carve/extraction options
-KEY_CONFIG_ITEM_FILE_CARVE_ENABLED = "fileCarveEnabled"
 KEY_CONFIG_ITEM_FILE_CARVE_MODE = "fileCarveMode"
 KEY_CONFIG_ITEM_FILE_PRESERVE_MODE = "filePreserveMode"
 KEY_CONFIG_ITEM_FILE_CARVE_HTTP_SERVER = "fileCarveHttpServer"
 KEY_CONFIG_ITEM_FILE_CARVE_HTTP_SERVER_ZIP = "fileCarveHttpServerZip"
 KEY_CONFIG_ITEM_FILE_CARVE_HTTP_SERVE_ENCRYPT_KEY = "fileCarveHttpServeEncryptKey"
-KEY_CONFIG_ITEM_CLAM_AV_SCAN = "clamAvScan"
-KEY_CONFIG_ITEM_YARA_SCAN = "yaraScan"
-KEY_CONFIG_ITEM_CAPA_SCAN = "capaScan"
-KEY_CONFIG_ITEM_VTOT_API_KEY = "vtotApiKey"
 KEY_CONFIG_ITEM_FILE_SCAN_RULE_UPDATE = "fileScanRuleUpdate"
+KEY_CONFIG_ITEM_PIPELINE_ENABLED = "pipelineEnabled"
+KEY_CONFIG_ITEM_PIPELINE_WORKERS = "pipelineWorkers"
 
 # Logstash options
 KEY_CONFIG_ITEM_LS_MEMORY = "lsMemory"
@@ -85,6 +89,21 @@ KEY_CONFIG_ITEM_TRAEFIK_LABELS = "traefikLabels"
 KEY_CONFIG_ITEM_OPEN_PORTS = "openPortsSelection"
 KEY_CONFIG_ITEM_CAPTURE_LIVE_NETWORK_TRAFFIC = "captureLiveNetworkTraffic"  # captureSelection in legacy installer
 
+# Malcolm ISO-installed environment specific extensions
+KEY_CONFIG_ITEM_REACHBACK_REQUEST_ACL = "reachbackRequestAcl"
+KEY_CONFIG_ITEM_AUX_FW_AIDE = "auxFwAide"
+KEY_CONFIG_ITEM_AUX_FW_AUDITLOG = "auxFwAuditlog"
+KEY_CONFIG_ITEM_AUX_FW_CPU = "auxFwCPU"
+KEY_CONFIG_ITEM_AUX_FW_DF = "auxFwDf"
+KEY_CONFIG_ITEM_AUX_FW_DISK = "auxFwDisk"
+KEY_CONFIG_ITEM_AUX_FW_KMSG = "auxFwKmsg"
+KEY_CONFIG_ITEM_AUX_FW_MEM = "auxFwMem"
+KEY_CONFIG_ITEM_AUX_FW_NETWORK = "auxFwNetwork"
+KEY_CONFIG_ITEM_AUX_FW_SYSTEMD = "auxFwSystemd"
+KEY_CONFIG_ITEM_AUX_FW_THERMAL = "auxFwThermal"
+KEY_CONFIG_ITEM_PRUNE_PCAP = "malSysPrunePcap"
+KEY_CONFIG_ITEM_PRUNE_LOGS = "malSysPruneLogs"
+
 # Open ports options
 KEY_CONFIG_ITEM_EXPOSE_LOGSTASH = "exposeLogstash"
 KEY_CONFIG_ITEM_EXPOSE_OPENSEARCH = "exposeOpenSearch"
@@ -103,15 +122,15 @@ KEY_CONFIG_ITEM_OPENSEARCH_SECONDARY_URL = "opensearchSecondaryUrl"
 KEY_CONFIG_ITEM_OPENSEARCH_SECONDARY_SSL_VERIFY = "opensearchSecondarySslVerify"
 KEY_CONFIG_ITEM_DASHBOARDS_URL = "dashboardsUrl"
 KEY_CONFIG_ITEM_SECONDARY_DOCUMENT_STORE = "secondaryDocumentStore"
-KEY_CONFIG_ITEM_MALCOLM_MAINTAIN_OPENSEARCH = (
-    "malcolmMaintainOpenSearch"  # Malcolm maintain its own opensearch instance
-)
 
 # Runtime options
 KEY_CONFIG_ITEM_RUNTIME_BIN = "runtimeBin"
 KEY_CONFIG_ITEM_MALCOLM_PROFILE = "malcolmProfile"
 KEY_CONFIG_ITEM_DASHBOARDS_DARK_MODE = "dashboardsDarkMode"
 KEY_CONFIG_ITEM_IMAGE_ARCH = "imageArch"
+# This is used for Hedgehog run profile to provide the host/IP for the remote Malcolm instance.
+#   It doesn't correspond to a single .env value, just convenience to not have to enter it in 4 places.
+KEY_CONFIG_ITEM_REMOTE_MALCOLM_HOST = "remoteMalcolmHost"
 
 # Storage options
 KEY_CONFIG_ITEM_CLEAN_UP_OLD_ARTIFACTS = "cleanUpOldArtifacts"
@@ -119,6 +138,7 @@ KEY_CONFIG_ITEM_CLEAN_UP_OLD_INDICES = "cleanUpOldIndices"
 KEY_CONFIG_ITEM_USE_DEFAULT_STORAGE_LOCATIONS = "useDefaultStorageLocations"
 KEY_CONFIG_ITEM_PCAP_DIR = "pcapDir"
 KEY_CONFIG_ITEM_ZEEK_LOG_DIR = "zeekLogDir"
+KEY_CONFIG_ITEM_FILESCAN_LOG_DIR = "filescanLogDir"
 KEY_CONFIG_ITEM_SURICATA_LOG_DIR = "suricataLogDir"
 KEY_CONFIG_ITEM_INDEX_DIR = "indexDir"
 KEY_CONFIG_ITEM_INDEX_SNAPSHOT_DIR = "indexSnapshotDir"

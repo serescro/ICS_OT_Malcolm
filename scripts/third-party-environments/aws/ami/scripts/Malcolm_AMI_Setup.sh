@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Copyright (c) 2025 Battelle Energy Alliance, LLC.  All rights reserved.
+# Copyright (c) 2026 Battelle Energy Alliance, LLC.  All rights reserved.
 
 # Configure Amazon Linux 2023 and install Malcolm
 
@@ -32,7 +32,7 @@ fi
 # -u UID      (user UID, e.g., 1000)
 VERBOSE_FLAG=
 MALCOLM_REPO=${MALCOLM_REPO:-idaholab/Malcolm}
-MALCOLM_TAG=${MALCOLM_TAG:-v25.11.0}
+MALCOLM_TAG=${MALCOLM_TAG:-v26.01.0}
 [[ -z "$MALCOLM_UID" ]] && ( [[ $EUID -eq 0 ]] && MALCOLM_UID=1000 || MALCOLM_UID="$(id -u)" )
 while getopts 'vr:t:u:' OPTION; do
   case "$OPTION" in
@@ -114,9 +114,9 @@ function InstallPythonPackages {
         python3-requests+security
 
     $SUDO_CMD /usr/bin/python3 -m pip install $USERFLAG -U \
-        dateparser==1.2.1 \
-        kubernetes==32.0.1 \
-        python-dotenv==1.1.0 \
+        dateparser==1.2.2 \
+        kubernetes==34.1.0 \
+        python-dotenv==1.2.1 \
         pythondialog==3.5.3
 }
 
@@ -173,25 +173,28 @@ function SystemConfig {
 kernel.dmesg_restrict=0
 
 # the maximum number of open file handles
-fs.file-max=518144
+fs.file-max=2097152
 
 # the maximum number of user inotify watches
 fs.inotify.max_user_watches=131072
 
-# the maximum number of memory map areas a process may have
-vm.max_map_count=262144
-
 # the maximum number of incoming connections
 net.core.somaxconn=65535
+
+# the maximum number of memory map areas a process may have
+vm.max_map_count=524288
 
 # decrease "swappiness" (swapping out runtime memory vs. dropping pages)
 vm.swappiness=1
 
 # the % of system memory fillable with "dirty" pages before flushing
-vm.dirty_background_ratio=40
+vm.dirty_background_ratio=5
 
 # maximum % of dirty system memory before committing everything
-vm.dirty_ratio=80
+vm.dirty_ratio=10
+
+# virtual memory accounting mode: always overcommit, never check
+vm.overcommit_memory=1
 EOT
     fi # sysctl check
 

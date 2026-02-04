@@ -14,26 +14,13 @@ In contrast to using the ISO installer, Malcolm can also be installed on any x86
 * [Malcolm Installation and Configuration](#MalcolmInstallAndConfig)
     - [ISO Installation](#ISOInstallMalcolm)
     - [Desktop Environment](#MalcolmDesktop)
-    - [Configuration](#MalcolmConfig)
+    - [Configure Network Interfaces](#NetConf)
+    - [Configure Hostname, Time Sync, and SSH Access](#MalcolmTimeSync)
+    - [Configure Malcolm](#MalcolmConfig)
         + [Malcolm Configuration Menu Items](#MalcolmConfigItems)
-    - [Configure Hostname and Time Sync](#MalcolmTimeSync)
     - [Setting up Authentication](#MalcolmAuthSetup)
 * [Hedgehog Linux Installation and Configuration](#HedgehogInstallAndConfig)
-    - [Hedgehog Linux ISO Installation](#ISOInstallHedgehog)
-    - [Desktop Environment](#HedgehogDesktop)
-    - [Configure Hostname, Interfaces and Time Sync](#HedgehogInterfaces)
-    - [Configure Capture](#HedgehogCapture)
-        + [Capture](#HedgehogConfigCapture)
-        + [File extraction and scanning](#HedgehogZeekFileExtraction)
-    - [Configure Forwarding](#HedgehogConfigForwarding)
-        + [arkime-capture](#Hedgehogarkime-capture): Arkime session forwarding
-        + [ssl-client-receive](#HedgehogGetCerts): Receive client SSL files for filebeat from Malcolm
-        + [filebeat](#Hedgehogfilebeat): Zeek and Suricata log forwarding
-        + [miscbeat](#Hedgehogmiscbeat): System metrics forwarding        
-        + [acl-configure](#HedgehogACL): Configure ACL for artifact reachback from Malcolm
-        + [tags-configure](#HedgehogTags): Specify extra tags for forwarded logs
-    - [Autostart services](#HedgehogConfigAutostart)
-    - [Managing disk usage](#HedgehogDiskUsage)
+    - [Configuring Communication Between Hedgehog and Malcolm](#HedgehogCommConfig)
 * [Verifying Traffic Capture and Forwarding](#Verify)
 * [Tuning Live Analysis](live-analysis.md#LiveAnalysisTuning)
 
@@ -41,7 +28,7 @@ In contrast to using the ISO installer, Malcolm can also be installed on any x86
 
 Please see [**Downloading Malcolm**](download.md#DownloadMalcolm) for instructions on how to obtain the Malcolm and Hedgehog Linux installation ISOs.
 
-As an alternative to the official release ISOs, instructions are provided for building the [Malcolm installer ISO](malcolm-iso.md#ISOBuild) and [Hedgehog Linux installer ISO](hedgehog-iso-build.md#HedgehogISOBuild) (Malcolm's dedicated [network sensor appliance OS](hedgehog.md)) from scratch.
+As an alternative to the official release ISOs, instructions are provided for building the [Malcolm installer ISO](malcolm-iso.md#ISOBuild) and Hedgehog Linux installer ISO (Malcolm's dedicated [network sensor appliance OS](hedgehog.md)) from scratch.
 
 ## <a name="ISOBurning"></a> "Burning" the Installation ISOs to USB Flash Drive
 
@@ -136,7 +123,61 @@ The panel bordering the top of the Malcolm desktop is home to a number of useful
 
 ![Malcolm Desktop](./images/screenshots/malcolm_desktop.png)
 
-### <a name="MalcolmConfig"></a> Configuration
+### <a name="NetConf"></a>Configure Network Interfaces
+
+The Malcolm base operating system does not use Dynamic Host Configuration Protocol (DHCP) to assign IP addresses to any ethernet interfaces by default. To configure DHCP for network interfaces intended for access and management, click the icon for the NetworkManager applet in the system tray and select **Auto Ethernet**:
+
+![Auto Ethernet](./images/screenshots/malcolm-desktop-ethernet-auto.png)
+
+Alternatively, to configure a network interface with a static IP address (recommended):
+
+1. Right-click the icon for the NetworkManager applet in the system tray and select **Edit Connections**
+
+![Edit Connections](./images/screenshots/malcolm-desktop-ethernet-manual-1.png)
+
+2. Click the plus ➕ icon on the **Network Connections** dialog
+
+![Add a new connection](./images/screenshots/malcolm-desktop-ethernet-manual-2.png)
+
+3. Select **Ethernet** for the Connection Type
+
+![Connection type](./images/screenshots/malcolm-desktop-ethernet-manual-3.png)
+
+4. On the **Ethernet** tab, select the **Device** (e.g., `eth0`, `enp1s0`, etc.) on
+
+![Device selection](./images/screenshots/malcolm-desktop-ethernet-manual-4.png)
+
+5. On the **IPv4 Settings** tab, set the method **Manual** and add the address/netmask/gateway and specify DNS servers, if applicable
+
+![IPv4 settings](./images/screenshots/malcolm-desktop-ethernet-manual-5.png)
+
+6. Click **Save**
+
+All network interfaces intended for **capture only** should have their method set to **Disabled** under the **IPv4 Settings** tab:
+
+![Disabled Network Interface](./images/screenshots/malcolm-desktop-ethernet-disabled.png)
+
+### <a name="MalcolmTimeSync"></a> Configure Hostname, Time Sync, and SSH Access
+
+If users wish to change Malcolm's hostname or configure system time synchronization, they can open a terminal (the icon immediately to the right of the **Applications** menu icon at the top of the Malcolm desktop) and run `system-quickstart` then enter the user (if the user is part of the `sudo` group) or `root` password.
+
+Here users can configure Malcolm to keep its time synchronized with either an NTP server (using the NTP protocol), another [Malcolm]({{ site.github.repository_url }}) aggregator or another HTTP/HTTPS server. On the next dialog, choose the time synchronization method to configure.
+
+![Time synchronization method](./images/hedgehog/images/time_sync_mode.png)
+
+If **htpdate** is selected, users will be prompted to enter the URL of an HTTP/HTTPS server (for another Malcolm instance, either port `443` or port `9200` over `https` may be used) and the time synchronization check frequency in minutes. A test connection will be made to determine if the time can be retrieved from the server.
+
+![*htpdate* configuration](./images/hedgehog/images/htpdate_setup.png)
+
+If *ntpdate* is selected, users will be prompted to enter the IP address or hostname of the NTP server.
+
+![NTP configuration](./images/hedgehog/images/ntp_host.png)
+
+Upon configuring time synchronization, a "Time synchronization configured successfully!" message will be displayed, after which users will be returned to the welcome screen. Select **Cancel**.
+
+This same utility can be used to enable SSH password authentication. *(Caution: password authentication is less secure than public/private key pairs.)*
+
+### <a name="MalcolmConfig"></a> Configure Malcolm
 
 The first time the Malcolm base operating system boots the **Malcolm Configuration** wizard will start automatically. This same configuration script can be run again later by running [`./scripts/configure`](malcolm-config.md#ConfigAndTuning) from the Malcolm installation directory, or clicking the **Configure Malcolm** 🔳 icon in the top panel.
 
@@ -175,39 +216,82 @@ Select an item number to configure, or an action:
 │   └── 5. Process User ID (current: 1000)
 ├── 6. Run Profile (current: malcolm)
 │   ├── 7. Dark Mode for Dashboards (current: Yes)
-│   ├── 8. Forward Logs to Remote Secondary Store (current: No)
-│   ├── 9. Local OpenSearch Instance (current: Yes)
-│   ├── 10. Logstash Memory (current: 1g)
-│   ├── 11. Logstash Workers (current: 3)
-│   └── 12. OpenSearch Memory (current: 4g)
-├── 13. Require HTTPS Connections (current: Yes)
-├── 14. IPv4 for nginx Resolver Directive (current: Yes)
-├── 15. IPv6 for nginx Resolver Directive (current: No)
-├── 16. Traefik Labels (current: No)
-├── 17. Use Default Storage Location (current: Yes)
-├── 18. Clean Up Artifacts (current: No)
-├── 19. Enable Arkime Index Management (current: No)
-├── 20. Enable Arkime Analysis (current: Yes)
-├── 21. Enable Suricata Analysis (current: Yes)
-│   └── 22. Enable Suricata Rule Updates (current: No)
-├── 23. Enable Zeek Analysis (current: Yes)
-│   ├── 24. Enable Zeek File Extraction (current: No)
-│   ├── 25. Enable Zeek ICS/OT Analyzers (current: No)
-│   └── 26. Use Threat Feeds for Zeek Intelligence (current: Yes)
-│       ├── 27. Cron Expression for Threat Feed Updates (current: 0 0 * * *)
-│       ├── 28. Intel::item_expiration Timeout (current: -1min)
-│       ├── 29. Pull Threat Intelligence Feeds on Startup (current: Yes)
-│       └── 30. Threat Indicator "Since" Period (current: 24 hours ago)
-├── 31. Enrich with Reverse DNS Lookups (current: No)
-├── 32. Enrich with Manufacturer (OUI) Lookups (current: Yes)
-├── 33. Enrich with Frequency Scoring (current: Yes)
-├── 34. NetBox Mode (current: Disabled)
-├── 35. Expose Malcolm Service Ports (current: No)
-├── 36. Network Traffic Node Name (current: host)
-└── 37. Capture Live Network Traffic (current: No)
+│   ├── 8. Extra Tags (current: [])
+│   ├── 9. Forward AIDE Results (current: No)
+│   ├── 10. Forward Audit Log (current: No)
+│   ├── 11. Forward CPU Utilization (current: No)
+│   ├── 12. Forward Disk Operation Statistics (current: No)
+│   ├── 13. Forward Disk Utilization (current: No)
+│   ├── 14. Forward Kernel Messages (current: No)
+│   ├── 15. Forward Logs to Remote Secondary Store (current: No)
+│   ├── 16. Forward Memory Utilization (current: No)
+│   ├── 17. Forward Network Activity (current: No)
+│   ├── 18. Forward Systemd Journal Logs (current: No)
+│   ├── 19. Forward Thermal Readings (current: No)
+│   ├── 20. Logstash Memory (current: 3g)
+│   ├── 21. Logstash Workers (current: 3)
+│   ├── 22. OpenSearch Memory (current: 31g)
+│   └── 23. Primary Document Store (current: opensearch-local)
+├── 24. Require HTTPS Connections (current: Yes)
+├── 25. IPv4 for nginx Resolver Directive (current: Yes)
+├── 26. IPv6 for nginx Resolver Directive (current: No)
+├── 27. Traefik Labels (current: No)
+├── 28. Use Default Storage Location (current: Yes)
+├── 29. Clean Up Artifacts (current: Yes)
+│   ├── 30. Arkime PCAP Management (current: Yes)
+│   │   └── 31. Delete PCAP Threshold (current: 5%)
+│   ├── 32. Delete Old Indices (current: Yes)
+│   │   ├── 33. Index Prune Threshold (current: 1T)
+│   │   └── 34. Prune Indices by Name (current: No)
+│   ├── 35. Prune Oldest Logs (current: No)
+│   └── 36. Prune Oldest PCAP (current: No)
+├── 37. Enable Arkime Index Management (current: No)
+├── 38. Enable Arkime Analysis (current: Yes)
+│   ├── 39. Allow Arkime WISE Configuration (current: No)
+│   └── 40. Enable Arkime WISE (current: Yes)
+├── 41. Enable Suricata Analysis (current: Yes)
+│   └── 42. Enable Suricata Rule Updates (current: Yes)
+├── 43. Enable Zeek Analysis (current: Yes)
+│   ├── 44. Enable Zeek ICS/OT Analyzers (current: Yes)
+│   │   └── 45. Enable Zeek ICS "Best Guess" (current: Yes)
+│   ├── 46. File Extraction Mode (current: interesting)
+│   │   ├── 47. Extracted File Percent Threshold (current: 0)
+│   │   ├── 48. Extracted File Size Threshold (current: 100G)
+│   │   ├── 49. File Preservation (current: quarantined)
+│   │   ├── 50. File scanning workers (current: 1)
+│   │   ├── 51. Preserved Files HTTP Server (current: Yes)
+│   │   │   ├── 52. Downloaded Preserved File Password (current: ********)
+│   │   │   └── 53. Zip Downloads (current: Yes)
+│   │   ├── 54. Scan with Strelka (current: Yes)
+│   │   └── 55. Update Scan Rules (current: Yes)
+│   └── 56. Use Threat Feeds for Zeek Intelligence (current: Yes)
+│       ├── 57. Cron Expression for Threat Feed Updates (current: 0 0 * * *)
+│       ├── 58. Intel::item_expiration Timeout (current: -1min)
+│       ├── 59. Pull Threat Intelligence Feeds on Startup (current: Yes)
+│       └── 60. Threat Indicator "Since" Period (current: 24 hours ago)
+├── 61. Enrich with Reverse DNS Lookups (current: Yes)
+├── 62. Enrich with Manufacturer (OUI) Lookups (current: Yes)
+├── 63. Enrich with Frequency Scoring (current: Yes)
+├── 64. NetBox Mode (current: Local)
+│   ├── 65. Auto-Create Subnet Prefixes (current: Yes)
+│   ├── 66. Auto-Populate NetBox Inventory (current: Yes)
+│   ├── 67. NetBox Enrichment (current: Yes)
+│   ├── 68. NetBox IP Autopopulation Filter (current: empty)
+│   └── 69. NetBox Site Name (current: Malcolm)
+├── 70. Expose Malcolm Service Ports (current: No)
+├── 71. Network Traffic Node Name (current: host)
+└── 72. Capture Live Network Traffic (current: Yes)
+    ├── 73. Analyze Live Traffic with Suricata (current: Yes)
+    ├── 74. Analyze Live Traffic with Zeek (current: Yes)
+    ├── 75. Capture Filter (current: empty)
+    ├── 76. Capture Interface(s) (current: eth0)
+    ├── 77. Capture Live Traffic with netsniff-ng (current: Yes)
+    ├── 78. Capture Live Traffic with tcpdump (current: No)
+    ├── 79. Gather Traffic Capture Statistics (current: Yes)
+    └── 80. Optimize Interface Settings for Capture (current: Yes)
 
 --- Actions ---
-  s. Save and Continue Installation
+  s. Save and Continue
   w. Where Is...? (search for settings)
   x. Exit Installer
 ---------------------------------
@@ -217,45 +301,44 @@ Enter item number or action:
 
 For some settings, additional sub-items will become available when that setting is enabled. For example, enabling **Zeek File Extraction** exposes the settings related to that feature:
 ```
+├── 43. Enable Zeek Analysis (current: Yes)
+│   ├── 44. Enable Zeek ICS/OT Analyzers (current: No)
+│   ├── 45. File Extraction Mode (current: none)
+│   └── 46. Use Threat Feeds for Zeek Intelligence (current: Yes)
 …
-├── 23. Enable Zeek Analysis (current: Yes)
-│   ├── 24. Enable Zeek File Extraction (current: No)
-│   ├── 25. Enable Zeek ICS/OT Analyzers (current: No)
-…
-Enter item number or action: 24
-
-Enable Zeek File Extraction (current: No)
-Enable file extraction with Zeek? (y / N): Y
-```
-
-```
-…
-├── 23. Enable Zeek Analysis (current: Yes)
-│   ├── 24. Enable Zeek File Extraction (current: Yes)
-│   │   └── 25. File Extraction Mode (current: interesting)
-│   │       ├── 26. Extracted File Percent Threshold (current: 0)
-│   │       ├── 27. Extracted File Size Threshold (current: empty)
-│   │       ├── 28. File Preservation (current: quarantined)
-│   │       ├── 29. Preserved Files HTTP Server (current: Yes)
-│   │       │   ├── 30. Downloaded Preserved File Password (current: empty)
-│   │       │   └── 31. Zip Downloads (current: No)
-│   │       ├── 32. Scan with capa (current: Yes)
-│   │       ├── 33. Scan with ClamAV (current: Yes)
-│   │       ├── 34. Scan with YARA (current: Yes)
-│   │       ├── 35. Update Scan Rules (current: Yes)
-│   │       └── 36. VirusTotal API Key (current: empty)
-│   ├── 37. Enable Zeek ICS/OT Analyzers (current: No)
-…
-Enter item number or action: 25
-File Extraction Mode (current: interesting)
+nter item number or action: 45
+File Extraction Mode (current: none)
 1: none
 2: known
 3: mapped
 4: all
 5: interesting
 6: notcommtxt
-Enter choice number (interesting): 4
+Enter choice number (none): 5
+```
+
+```
 …
+├── 43. Enable Zeek Analysis (current: Yes)
+│   ├── 44. Enable Zeek ICS/OT Analyzers (current: No)
+│   ├── 45. File Extraction Mode (current: interesting)
+│   │   ├── 46. Extracted File Percent Threshold (current: 0)
+│   │   ├── 47. Extracted File Size Threshold (current: 100G)
+│   │   ├── 48. File Preservation (current: quarantined)
+│   │   ├── 49. File scanning workers (current: 1)
+│   │   ├── 50. Preserved Files HTTP Server (current: Yes)
+│   │   │   ├── 51. Downloaded Preserved File Password (current: ********)
+│   │   │   └── 52. Zip Downloads (current: Yes)
+│   │   ├── 53. Scan with Strelka (current: Yes)
+│   │   └── 54. Update Scan Rules (current: Yes)
+│   └── 55. Use Threat Feeds for Zeek Intelligence (current: Yes)
+…
+Enter item number or action: 48
+File Preservation (current: quarantined)
+1: quarantined
+2: all
+3: none
+Enter choice number (quarantined): 1
 ```
 
 Once the desired Malcolm configuration options have been selected, select **s** to save the settings and proceed to the final configuration summary for confirmation. Then, select **y** to write the changed configuration to the corresponding [environment variable](malcolm-config.md#MalcolmConfigEnvVars) files.
@@ -310,15 +393,18 @@ Proceed with Malcolm installation using the above configuration? (y / N): y
     - Malcolm can be run in [either](live-analysis.md#Profiles) of two [profiles](https://docs.docker.com/compose/profiles/): the `malcolm` profile runs all containers including those for log enrichment and indexing, while the `hedgehog` profile (named as a nod to [Hedgehog Linux](hedgehog.md), Malcolm's [dedicated network sensor OS](live-analysis.md#Hedgehog)) runs only the containers required for [live traffic analysis](live-analysis.md#LocalPCAP). When using the `hedgehog` profile, captured network artifacts must be forwarded to another Malcolm instance: its [OpenSearch instance](opensearch-instances.md#OpenSearchInstance) connection parameters (e.g., `https://192.168.122.5:9200`) and Logstash connection parameters (e.g., `192.168.122.5:5044`) must be specified later on in the configuration. See [idaholab/Malcolm#254](https://github.com/idaholab/Malcolm/issues/254) for the origin of this feature.
     - **Dark Mode for Dashboards**
         + Select **Y** for dark-themed dashboards or **N** for light-themed ones.
+    - **Extra Tags**
+        + Provide a comma-separated list of values to be added to the `tags` field for logs processed by Malcolm. These tags may make it easier to identify or search for data during analysis.
     - **Forward Logs to Remote Secondary Store**
         + Whether the primary OpenSearch instance is a locally maintained single-node instance or remote cluster, Malcolm can also be configured to forward logs to a secondary remote OpenSearch instance. See [OpenSearch and Elasticsearch instances](opensearch-instances.md#OpenSearchInstance) for more information about forwarding logs to another OpenSearch instance. If this option is enabled, sub-items will become available to configure the secondary document store type (`opensearch-remote` vs `elasticsearch-remote`) and URL.
-    - **Local OpenSearch Instance** and **Primary Document Store**
-        + Malcolm's default standalone configuration is to use a local [OpenSearch](https://opensearch.org/) instance in a container to index and search network traffic metadata. See [OpenSearch and Elasticsearch instances](opensearch-instances.md#OpenSearchInstance) for more information about using a remote OpenSearch or Elasticsearch cluster instead.
-        + If this setting is set to `N`, the **Primary Document Store** option will appear to allow the user to select `opensearch-remote` or `elasticsearch-remote` as the alternative to the local OpenSearch instance, as well as the corresponding URL for the remote instance.
+    - **Forward …**
+        + Malcolm uses [Fluent Bit](https://fluentbit.io/) to gather miscellaneous system resource metrics (CPU, network I/O, disk I/O, memory utilization, temperature, etc.) and the [Beats](https://www.elastic.co/guide/en/beats/filebeat/current/filebeat-input-tcp.html) protocol to forward these metrics to its [Logstash](https://www.elastic.co/products/logstash) service for further enrichment prior to indexing into the [OpenSearch](https://opensearch.org/) database. Metrics categories can be enabled/disabled with the remaining **Forward …** options under the **Run Profile** section.
+    - **Primary Document Store**
+        + Malcolm's default standalone configuration is to use a local [OpenSearch](https://opensearch.org/) instance in a container to index and search network traffic metadata. See [OpenSearch and Elasticsearch instances](opensearch-instances.md#OpenSearchInstance) for more information about using a remote OpenSearch or Elasticsearch cluster instead. The **Primary Document Store** option allows the user to select `opensearch-local` (for Malcolm to maintain its own OpenSearch instance), `opensearch-remote`, or `elasticsearch-remote`. In the case of the `-remote` options, the user can also specify the corresponding URL for the remote instance.
     - **OpenSearch Memory** and **Logstash Memory**
         + Two of Malcolm's main components, OpenSearch and Logstash, require a substantial amount of memory. The configuration script will suggest defaults for these values based on the amount of physical memory the system has. The minimum recommended amount of system memory for Malcolm is 24 GB. Users should not use a value under 10 GB for OpenSearch and 2500 MB for Logstash.
     - **Logstash Workers**
-        + This setting is used to tune the performance and resource utilization of the the `logstash` container. The default is calculated based on the number of logical CPUs the system has. See [Tuning and Profiling Logstash Performance](https://www.elastic.co/guide/en/logstash/current/tuning-logstash.html), [`logstash.yml`](https://www.elastic.co/guide/en/logstash/current/logstash-settings-file.html) and [Multiple Pipelines](https://www.elastic.co/guide/en/logstash/current/multiple-pipelines.html).
+        + This setting is used to tune the performance and resource utilization of the the `logstash` container: it represents the number of worker threads for each parsing/enrichment pipeline used by Logstash for log processing. The default is calculated based on the number of logical CPUs the system has. See [Tuning and Profiling Logstash Performance](https://www.elastic.co/guide/en/logstash/current/tuning-logstash.html), [`logstash.yml`](https://www.elastic.co/guide/en/logstash/current/logstash-settings-file.html) and [Multiple Pipelines](https://www.elastic.co/guide/en/logstash/current/multiple-pipelines.html).
 * **Require HTTPS Connections**
     - Malcolm uses [TLS](authsetup.md#TLSCerts) encryption for its web browser-accessible user interfaces. Setting **Y** for this option is almost always preferred. The only situation where **N** would be appropriate would be when running Malcolm behind a third-party reverse proxy (e.g., [Traefik](https://doc.traefik.io/traefik/) or [Caddy](https://caddyserver.com/docs/quick-starts/reverse-proxy)) to handle the issuance of the certificates automatically and to broker the connections between clients and Malcolm. Reverse proxies such as these often implement the [ACME](https://datatracker.ietf.org/doc/html/rfc8555) protocol for domain name authentication and can be used to request certificates from certificate authorities such as [Let's Encrypt](https://letsencrypt.org/how-it-works/). In this configuration, the reverse proxy will be encrypting the connections instead of Malcolm. Users should ensure they understand these implications and ensure that external connections cannot reach ports over which Malcolm will be communicating without encryption, including verifying the local firewall configuration, when setting this to **N**.
 * **IPv4 for nginx Resolver Directive** and **IPv6 for nginx Resolver Directive**
@@ -349,15 +435,16 @@ Proceed with Malcolm installation using the above configuration? (y / N): y
         - This specifies whether Arkime should store non-session indices (`arkime-history`) indices in a warm index. This requires additional configuration as demonstrated in the [Arkime documentation](https://arkime.com/faq#ilm).
 * **Enable Arkime Analysis**
     - This option is used to enable [Arkime](https://arkime.com/) to analyze PCAP files uploaded to Malcolm via its upload web interface.
+    - **Enable Arkime WISE**, **Allow Arkime WISE Configuration**, and **Arkime WISE URL**
+        + These settings control the [Arkime WISE](arkime.md#ArkimeWISE) configuration.
 * **Enable Suricata Analysis**
     - This option is used to enable [Suricata](https://suricata.io/) (an IDS and threat detection engine) to analyze PCAP files uploaded to Malcolm via its upload web interface.
     - **Enable Suricata Rule Updates**
         + If the Malcolm instance has Internet connectivity, select **Y** to [enable automatic updates](https://suricata-update.readthedocs.io/en/latest/) of the Suricata rules used by Malcolm. This setting also applies to the rules used for live analysis when **Analyze Live Traffic with Suricata** is enabled.
 * **Enable Zeek Analysis**
     - This option is used to enable [Zeek](https://www.zeek.org/index.html) (a network analysis framework and IDS) to analyze PCAP files uploaded to Malcolm via its upload web interface.
-    - **Enable Zeek File Extraction**
-        + Select **Y** to indicate that Zeek should [extract files](file-scanning.md#ZeekFileExtraction) transfered in observed network traffic.
-        + **File Extraction Mode**
+    - These options are used to configure [**automatic file extraction and scanning**](file-scanning.md#ZeekFileExtraction):
+        - **File Extraction Mode**
             * This determines which files Zeek should extract for scanning:
                 - `none`: no file extraction
                 - `interesting`: extraction of files with mime types of common attack vectors
@@ -365,12 +452,16 @@ Proceed with Malcolm installation using the above configuration? (y / N): y
                 - `known`: extraction of files for which any mime type can be determined
                 - `all`: extract all files
                 - `notcommtxt`: extract all files except common plain text files
+        + **Scan with Strelka**
+            * Choosing **Y** enables scanning of Zeek-extracted files with [Strelka](https://target.github.io/strelka/#/).
+        + **File scanning workers**
+            * This specifies the number of [Strelka](https://target.github.io/strelka/#/) backend instances performing file scanning concurrently.
         + **Extracted File Percent Threshold** and **Extracted File Size Threshold**
-            * Files [extracted by Zeek](file-scanning.md#ZeekFileExtraction) can be periodically pruned to ensure the disk storage they consume does not exceed a user-specified threshold. See the documentation on [managing Malcolm's disk usage](malcolm-config.md#DiskUsage) for more information.
+            * Files extracted by Zeek can be periodically pruned to ensure the disk storage they consume does not exceed a user-specified threshold. See the documentation on [managing Malcolm's disk usage](malcolm-config.md#DiskUsage) for more information.
         + **File Preservation**
             * This determines the behavior for preservation of Zeek-extracted files:
-                -  `quarantined`: preserve only flagged files in `./zeek-logs/extract_files/quarantine`
-                - `all`: preserve flagged files in `./zeek-logs/extract_files/quarantine` and all other extracted files in `./zeek-logs/extract_files/preserved`
+                -  `quarantined`: preserve only flagged files in `./zeek-logs/extract_files`
+                - `all`: preserve all extracted files `./zeek-logs/extract_files`
                 - `none`: preserve no extracted files
         + **Preserved Files HTTP Server**
             * Choosing **Y** enables access to the Zeek-extracted files path through the means of a simple HTTPS directory server at **https://﹤Malcolm host or IP address﹥/extracted-files/**. Beware that Zeek-extracted files may contain malware.
@@ -378,16 +469,8 @@ Proceed with Malcolm installation using the above configuration? (y / N): y
             * A non-blank value will be used as either the ZIP archive file password (if **Zip Downloads** is enabled) or as the encryption key for the file to be AES-256-CBC-encrypted in an `openssl enc`-compatible format (e.g., `openssl enc -aes-256-cbc -d -in example.exe.encrypted -out example.exe`).
         + **Zip Downloads**
             * Selecting **Y** will cause that Zeek-extracted file downloads will be archived using the ZIP file format.
-        + **Scan with capa**
-            * Select **Y** to scan extracted executable files with [Capa](https://github.com/fireeye/capa), a tool for detecting capabilities in executable files.
-        + **Scan with ClamAV**
-            * Select **Y** to scan extracted files with [ClamAV](https://www.clamav.net/), an antivirus engine.
-        + **Scan with YARA**
-            * Select **Y** to scan extracted files with [Yara](https://github.com/VirusTotal/yara), a tool used to identify and classify malware samples.
         + **Update Scan Rules**
             * If the Malcolm instance has Internet connectivity, choose **Y** to enable periodic downloads of signatures used by ClamAV and YARA.
-        + **VirusTotal API Key**
-            * Specifying the [**VirusTotal**](https://www.virustotal.com/en/#search) [API key](https://support.virustotal.com/hc/en-us/articles/115002100149-API) to be used for submitting the hashes of extracted files to VirusTotal. Only specify this option if the Malcolm instance has Internet connectivity.
     - **Enable Zeek ICS/OT Analyzers**
         + If using Malcolm in a control systems (OT/ICS) network, select **Y** to enable Malcolm's ICS protocol analyzers for Zeek.
         + **Enable Zeek ICS "Best Guess"**
@@ -423,7 +506,7 @@ Proceed with Malcolm installation using the above configuration? (y / N): y
 * **Expose Malcolm Service Ports**
     - Select **yes** or **no** in order for Malcolm's firewall to allow or block connections for OpenSearch, Logstash, and Filebeat TCP, bypassing the following sub-items in this list. Select **customize** to proceed to enable or disable exposing of the following services individually:
     - **Expose Filebeat TCP**
-        + Select **Y** in order for Malcolm's firewall to allow connections from a remote log forwarder (such as Hedgehog Linux for resource utilization metrics or other forwarders for other [third-Party logs](third-party-logs.md#ThirdPartyLogs)) to TCP port 5045.
+        + Select **Y** in order for Malcolm's firewall to allow connections from a remote log forwarder (such as Hedgehog Linux for resource utilization metrics or other forwarders for other [third-Party logs](third-party-logs.md)) to TCP port 5045.
     - **Use Filebeat TCP Listener Defaults**
         + Select **Y** to use the defaults (recommended) or **N** to specify custom values for the Filebeat TCP listener.
         + **Filebeat TCP Log Format**
@@ -462,29 +545,11 @@ Proceed with Malcolm installation using the above configuration? (y / N): y
     - **Capture Live Traffic with tcpdump**
         + Select **Y** to use [tcpdump](https://www.tcpdump.org/) (instead of netsniff-ng) to generate PCAP files to be periodically rotated into Arkime for analysis.
     - **Capture Live Traffic with Arkime**
-        + When running the ["Hedgehog" run profile](live-analysis.md#Profiles), when using [a remote OpenSearch or Elasticsearch instance](opensearch-instances.md#OpenSearchInstance), or in a [Kubernetes-based deployment](kubernetes.md#Kubernetes), users may choose to have Arkime's `capture` tool monitor live traffic on the network interface without using netsniff-ng or tcpdump to generate intermediate PCAP files. See [**Live Analysis**](live-analysis.md#LocalPCAP) for more information.
+        + When running the ["Hedgehog" run profile](live-analysis.md#Profiles), when using [a remote OpenSearch or Elasticsearch instance](opensearch-instances.md#OpenSearchInstance), or in a [Kubernetes-based deployment](kubernetes.md#Kubernetes), users may choose to have Arkime's `capture` tool monitor live traffic on the network interface without using netsniff-ng or tcpdump to generate intermediate PCAP files. See [**Live Analysis**](live-analysis.md#LocalPCAP) for more information. If the sensor is capturing locally but *not* forwarding to a Malcolm aggregator, use netsniff-ng or tcpdump instead.
     - **Gather Traffic Capture Statistics**
         + If Malcolm is doing its own [live traffic analysis](live-analysis.md#LocalPCAP) and users enable this setting, Malcolm will gather capture statistics for [Zeek](https://docs.zeek.org/en/master/scripts/policy/misc/stats.zeek.html#type-Stats::Info) and [Suricata](https://docs.suricata.io/en/latest/configuration/suricata-yaml.html#stats) to populate the **Packet Capture Statistics** dashboard.
     - **Optimize Interface Settings for Capture**
         + If Malcolm is doing its own [live traffic analysis](live-analysis.md#LocalPCAP) and this option is enabled, Malcolm will [use `ethtool`]({{ site.github.repository_url }}/blob/{{ site.github.build_revision }}/shared/bin/nic-capture-setup.sh) to disable NIC hardware offloading features and adjust ring buffer sizes for capture interface(s) to improve performance; this should be enabled if the interface(s) are being used for capture **only**, otherwise select **N**. If unsure, users should probably answer **N**.
-
-### <a name="MalcolmTimeSync"></a> Configure Hostname and Time Sync
-
-If users wish to change Malcolm's hostname or configure system time synchronization, they can open a terminal (the icon immediately to the right of the **Applications** menu icon at the top of the Malcolm desktop) and run `sudo configure-interfaces.py` then enter the password. If users get an error about not belonging to the `sudo` group, run `su -c configure-interfaces.py` and use the `root` password instead.
-
-Here users can configure Malcolm to keep its time synchronized with either an NTP server (using the NTP protocol), another [Malcolm]({{ site.github.repository_url }}) aggregator or another HTTP/HTTPS server. On the next dialog, choose the time synchronization method to configure.
-
-![Time synchronization method](./images/hedgehog/images/time_sync_mode.png)
-
-If **htpdate** is selected, users will be prompted to enter the URL of an HTTP/HTTPS server (for another Malcolm instance, either port `443` or port `9200` over `https` may be used) and the time synchronization check frequency in minutes. A test connection will be made to determine if the time can be retrieved from the server.
-
-![*htpdate* configuration](./images/hedgehog/images/htpdate_setup.png)
-
-If *ntpdate* is selected, users will be prompted to enter the IP address or hostname of the NTP server.
-
-![NTP configuration](./images/hedgehog/images/ntp_host.png)
-
-Upon configuring time synchronization, a "Time synchronization configured successfully!" message will be displayed, after which users will be returned to the welcome screen. Select **Cancel**.
 
 ### <a name="MalcolmAuthSetup"></a> Setting up Authentication
 
@@ -509,10 +574,12 @@ Users will be prompted to do the following:
 * **(Re)generate self-signed certificates for HTTPS access**
     - This generates the self-signed [TLS certificates](authsetup.md#TLSCerts) used for encrypting the connections between users' web browsers and Malcolm.
 * **(Re)generate self-signed certificates for a remote log forwarder**
-    - This generates the self-signed [TLS certificates](authsetup.md#TLSCerts) for communications from a remote log forwarder (such as Hedgehog Linux or forwarders for other [third-party logs](third-party-logs.md#ThirdPartyLogs)).
+    - This generates the self-signed [TLS certificates](authsetup.md#TLSCerts) for communications from a remote log forwarder (such as Hedgehog Linux or forwarders for other [third-party logs](third-party-logs.md)).
 * **Configure Keycloak**
     - Users may answer **Y** to configure [Keycloak](https://www.keycloak.org/) as Malcolm's provider of user authentication. See [**Configure authentication: Keycloak**](authsetup.md#AuthKeycloak) for more information.
-* **Configure remote primary or secondary OpenSearch/Elasticsearch instance**
+* **Configure Role-Based Access Control**
+    - If using Keycloak, users may enable role-based access control. See [**Role-based access control**](authsetup.md#AuthKeycloakRBAC) for more information.
+* **Store username/password for OpenSearch/Elasticsearch instance**
     - Users should answer **N** if using Malcolm's local OpenSearch instance, or **Y** to specify credentials for a remote OpenSearch or Elasticsearch cluster (see [OpenSearch and Elasticsearch instances](opensearch-instances.md#OpenSearchInstance)).
 * **Store username/password for OpenSearch Alerting email sender account**
     - Users may answer **Y** to specify credentials for [Email Sender Accounts](alerting.md#AlertingEmail) to be used with OpenSearch Dashboards' alerting plugin.
@@ -523,354 +590,100 @@ Users will be prompted to do the following:
 * **(Re)generate internal passwords for Redis**
     - Malcolm uses Redis to store session information for several components, including NetBox. Users should answer **Y** to this question the first time authentication is configured.
 * **Store password hash secret for Arkime viewer cluster**
-    - This value corresponds to the `passwordSecret` value in Arkime's [config.ini file](https://arkime.com/settings). Arkime uses this value to secure communication (specifically, the connection used when Arkime viewer retrieves a PCAP payload for display in its user interface) between Arkime viewers in instances of Malcolm and Hedgehog Linux. In other words, this value needs to be the same for the Malcolm instance and all of the instances of Hedgehog Linux forwarding Arkime sessions to that Malcolm instance. The corresponding value is set when setting up [Arkime capture](#Hedgehogarkime-capture) during the Hedgehog Linux configuration.
+    - This value corresponds to the `passwordSecret` value in Arkime's [config.ini file](https://arkime.com/settings). Arkime uses this value to secure communication (specifically, the connection used when Arkime viewer retrieves a PCAP payload for display in its user interface) between Arkime viewers in instances of Malcolm and Hedgehog Linux. In other words, this value needs to be the same for the Malcolm instance and all of the instances of Hedgehog Linux forwarding Arkime sessions to that Malcolm instance. The corresponding value should be provided when running `auth_setup` on the Hedgehog Linux sensor.
 * **Transfer self-signed client certificates to a remote log forwarder**
-    - In order for a sensor running Hedgehog Linux to securely communicate with Malcolm, it needs a copy of the client certificates generated when "(Re)generate self-signed certificates for a remote log forwarder" was selected earlier. Malcolm can facilitate the secure transfer of these certificates. If users will be continuing on to configure a sensor running Hedgehog Linux, they should answer **Y** here. They will be prompted to "Run configure-capture on the remote log forwarder, select 'Configure Forwarding,' then 'Receive client SSL files...'." Users should continue on with the instructions for [Hedgehog Linux Installation and Configuration](#HedgehogInstallAndConfig), then return here and press **Enter** after reaching **[ssl-client-receive](#HedgehogGetCerts): Receive client SSL files for filebeat from Malcolm** below. After that process is complete, users may press **OK** and Malcolm will continue to start up.
+    - In order for a sensor running Hedgehog Linux to securely communicate with Malcolm, it needs a copy of the client certificates generated when "(Re)generate self-signed certificates for a remote log forwarder" was selected earlier. Malcolm can facilitate the secure transfer of these certificates. If users will be continuing on to configure a sensor running Hedgehog Linux, they should answer **Y** here. They will be prompted to "Run auth_setup on the sensor and select 'Receive client certificates from Malcolm'". Users should continue on with the instructions for [Hedgehog Linux Installation and Configuration](#HedgehogInstallAndConfig), then return here and press **Enter** once they have chosen the corresponding `auth_setup` operation [below](#HedgehogCommConfig). After that process is complete, users may press **OK** and Malcolm will continue to start up.
+    * ![SSL Certificate Transfer, Malcolm Side - 01](./images/screenshots/ssl-cert-transfer-01.png)
 
 ## <a name="HedgehogInstallAndConfig"></a> Hedgehog Linux Installation and Configuration
 
-More detailed instructions for configuring Hedgehog Linux can be found in that section of the [documentation](hedgehog.md).
-
-## <a name="ISOInstallHedgehog"></a> Hedgehog Linux ISO Installation
-
-The Hedgehog Linux installation ISO follows the same process as the [Malcolm installation](#ISOInstallMalcolm) above.
-
-The installer will ask for a few pieces of information prior to installing Hedgehog Linux:
-
-* **Hostname** - the name of the Hedgehog Linux system used to identify itself on the network
-* **Root password** – a password for the privileged root account, which is rarely needed (only during the configuration of the sensors network interfaces and setting the sensor host name)
-* **User password** – a password for the non-privileged `sensor` account under which the various sensor capture and forwarding services run
-* **Encryption password** – (optional) if the encrypted installation option was selected at boot, the encryption password must be entered every time the sensor boots
-
-At the end of the installation process, users will be prompted with a few self-explanatory yes/no questions:
-
-* **Format non-OS drive(s) for artifact storage?**
-* **Disable IPv6?**
-* **Automatically login to the GUI session?**
-* **Should the GUI session be locked due to inactivity?**
-* **Display the [Standard Mandatory DoD Notice and Consent Banner](https://www.stigviewer.com/stig/application_security_and_development/2018-12-24/finding/V-69349)?** *(only applies when installed on U.S. government information systems)*
-* **Allow SSH password authentication?** *(Caution: password authentication is less secure than public/private key pairs)*
-
-Following these prompts, the installer will reboot and Hedgehog Linux will boot into [kiosk mode](hedgehog-boot.md#HedgehogKioskMode).
-
-
-![Kiosk mode sensor menu: resource statistics](./images/hedgehog/images/kiosk_mode_sensor_menu.png)
-
-Kiosk mode can be exited by connecting an external USB keyboard and pressing **Alt+F4**, upon which the *sensor* user's desktop is shown.
-
-### <a name="HedgehogDesktop"></a> Desktop Environment
-
-The Hedgehog Linux base operating system is a [hardened](hedgehog-hardening.md#HedgehogHardening) Linux installation based on the current [stable release](https://wiki.debian.org/DebianStable) of [Debian](https://www.debian.org/) [running](https://wiki.debian.org/Xfce) the [XFCE desktop environment](https://www.xfce.org/). 
-
-Display resolution should be detected and adjusted automatically. To make changes to display properties, click the **Applications** menu and select **Settings** → **Display**.
-
-The panel bordering the top of the Malcolm desktop is home to a number of useful shortcuts:
-
-![Hedgehog Linux desktop](./images/hedgehog/images/desktop.png)
-
-*The Hedgehog Linux desktop*
-
-* **Terminal** - opens a command prompt in a terminal emulator
-* **Browser** - opens a web browser
-* **Kiosk** – returns the sensor to kiosk mode
-* **README** – displays this document
-* **Sensor status** – displays a list with the status of each sensor service
-* **Configure capture and forwarding** – opens a dialog for configuring the sensor's capture and forwarding services, as well as specifying which services should autostart upon boot
-* **Configure interfaces and hostname** – opens a dialog for configuring the sensor's network interfaces and setting the sensor's hostname
-* **Restart sensor services** - stops and restarts all of the [autostart services](#HedgehogConfigAutostart)
-
-## <a name="HedgehogInterfaces"></a> Configure Hostname, Interfaces and Time Sync
-
-The first step of sensor configuration is to configure the network interfaces and sensor hostname. Clicking the **Configure Interfaces and Hostname** toolbar icon (or running `configure-interfaces` at a command line prompt) will prompt for the root password created during installation, after which the configuration welcome screen is shown. Select **Continue** to proceed.
-
-Users may next select whether to configure the network interfaces, hostname, or time synchronization.
-
-![Selection to configure network interfaces, hostname, or time synchronization](./images/hedgehog/images/root_config_mode.png)
-
-Selecting **Hostname**, users will be presented with a summary of the current sensor identification information, after which a new sensor hostname may be specified.  This name will be used to tag all events forwarded from this sensor in the events' **host.name** field.
-
-![Specifying a new sensor hostname](./images/hedgehog/images/hostname_setting.png)
-
-Returning to the configuration mode selection, choose **Interface**. Users will be asked if they would like help identifying network interfaces. If they select **Yes**, users will be prompted to select a network interface, after which that interface's link LED will blink for 10 seconds to identify itself. This network interface identification aid will continue to prompt users to identify further network interfaces until they select **No**.
-
-Users will be presented with a list of interfaces to configure as the sensor management interface. This is the interface the sensor itself will use to communicate with the network in order to, for example, forward captured logs to an aggregate server. In order to do so, the management interface must be assigned an IP address. This is generally **not** the interface used for capturing data. Select the interface to which to assign an IP address. The interfaces are listed by name and MAC address and the associated link speed is also displayed if it can be determined. For interfaces without a connected network cable, generally a `-1` will be displayed instead of the interface speed.
-
-![Management interface selection](./images/hedgehog/images/select_iface.png)
-
-Depending on their network configuration, users may now specify how the management interface will be assigned an IP address. In order to communicate with an event aggregator over the management interface, either **static** or **dhcp** must be selected.
-
-![Interface address source](./images/hedgehog/images/iface_mode.png)
-
-If users select **static**, they will be prompted to enter the IP address, netmask, and gateway to assign to the management interface.
-
-![Static IP configuration](./images/hedgehog/images/iface_static.png)
-
-In either case, upon selecting **OK** the network interface will be brought down, configured, brought back up, and the result of the operation will be displayed. Users may choose **Quit** upon returning to the configuration tool's welcome screen.
-
-Returning to the configuration mode selection, choose **Time Sync**. Here users can configure the sensor to keep its time synchronized with an NTP server (using the NTP protocol), a local [Malcolm]({{ site.github.repository_url }}) aggregator, or another HTTP/HTTPS server. On the next dialog, choose the time synchronization method to configure.
-
-![Time synchronization method](./images/hedgehog/images/time_sync_mode.png)
-
-If **htpdate** is selected, users will be prompted to enter the URL of an HTTP/HTTPS server (for another Malcolm instance, either port `443` or port `9200` over `https` may be used) and the time synchronization check frequency in minutes. A test connection will be made to determine if the time can be retrieved from the server.
-
-![*htpdate* configuration](./images/hedgehog/images/htpdate_setup.png)
-
-If *ntpdate* is selected, users will be prompted to enter the IP address or hostname of the NTP server.
-
-![NTP configuration](./images/hedgehog/images/ntp_host.png)
-
-Upon configuring time synchronization, a "Time synchronization configured successfully!" message will be displayed, after which users will be returned to the welcome screen. Select **Cancel**.
-
-## <a name="HedgehogCapture"></a> Configure Capture
-
-Clicking the **Configure Capture and Forwarding** toolbar icon (or running `configure-capture` at the command line prompt) will launch the configuration tool for capture and forwarding. The root password is not required as it was for the interface and hostname configuration, as sensor services are run under the non-privileged sensor account. Select **Continue** to proceed. Users may select from a list of configuration options.
-
-![Select configuration mode](./images/hedgehog/images/capture_config_main.png)
-
-### <a name="HedgehogConfigCapture"></a>Capture
-
-Choose **Configure Capture** to configure parameters related to traffic capture and local analysis. Users will be asked if they would like help identifying network interfaces. If they select **Yes**, users will be prompted to select a network interface, after which that interface's link LED will blink for 10 seconds to identify itself. This network interface identification aid will continue to prompt users to identify further network interfaces until they select **No**.
-
-Users will be presented with a list of network interfaces and prompted to select one or more capture interfaces. An interface used to capture traffic is generally a different interface than the one selected previously as the management interface, and each capture interface should be connected to a network tap or span port for traffic monitoring. Capture interfaces are usually not assigned an IP address as they are only used to passively “listen” to the traffic on the wire. The interfaces are listed by name and MAC address and the associated link speed is also displayed if it can be determined. For interfaces without a connected network cable, generally a `-1` will be displayed instead of the interface speed.
-
-![Select capture interfaces](./images/hedgehog/images/capture_iface_select.png)
-
-Upon choosing the capture interfaces and selecting OK, users may optionally provide a capture filter. This filter will be used to limit what traffic the PCAP service ([netsniff-ng](http://netsniff-ng.org/) or [tcpdump](https://www.tcpdump.org/)) and the traffic analysis services ([`zeek`](https://www.zeek.org/) and [`suricata`](https://suricata.io/)) will see. Capture filters are specified using [Berkeley Packet Filter (BPF)](http://biot.com/capstats/bpf.html) syntax. For example, to indicate Hedgehog should ignore the ports it uses to communicate with Malcolm, users could specify `not port 5044 and not port 5045 and not port 8005 and not port 8006 and not port 9200`. Clicking **OK** will attempt to validate the capture filter, if specified, and will present a warning if the filter is invalid.
-
-![Specify capture filters](./images/hedgehog/images/capture_filter.png)
-
-Users will be prompted whether or not they wish to enable live packet capture statistics [Zeek](https://docs.zeek.org/en/master/scripts/policy/misc/stats.zeek.html#type-Stats::Info) and [Suricata](https://docs.suricata.io/en/latest/configuration/suricata-yaml.html#stats). If enabled, these statistics will be used to populate Malcolm's **Packet Capture Statistics** dashboard.
-
-Next users must specify the paths where captured PCAP files and logs will be stored locally on the sensor. If the installation worked as expected, these paths should be prepopulated to reflect paths on the volumes formatted at install time for the purpose storing these artifacts. Usually these paths will exist on separate storage volumes. Enabling the PCAP and log pruning autostart services (see the section on autostart services below) will enable monitoring of these paths to ensure that their contents do not consume more than 90% of their respective volumes' space. Choose **OK** to continue.
-
-![Specify capture paths](./images/hedgehog/images/capture_paths.png)
-
-### <a name="HedgehogZeekFileExtraction"></a>File extraction and scanning
-
-Hedgehog Linux can leverage Zeek's knowledge of network protocols to automatically detect file transfers and extract those files from network traffic as Zeek sees them.
-
-To specify which files should be extracted, specify the Zeek file carving mode:
-
-![Zeek file carving mode](./images/hedgehog/images/zeek_file_carve_mode.png)
-
-If unsure what mode to choose, both **mapped (except common plain text files)** (to carve and scan almost all files) and **interesting** (to only carve and scan files with [mime types of common attack vectors]({{ site.github.repository_url }}/blob/{{ site.github.build_revision }}/hedgehog-iso/interface/sensor_ctl/zeek/extractor_override.interesting.zeek)) are probably good choices.
-
-Next, specify which carved files to preserve (saved on the sensor under `/capture/zeek/capture/extract_files/quarantine` by default). In order to not consume all the sensor's available storage space, the oldest preserved files will be pruned along with the oldest Zeek logs as described below with **AUTOSTART_PRUNE_ZEEK** in the [autostart services](#HedgehogConfigAutostart) section.
-
-![File quarantine](./images/hedgehog/images/file_quarantine.png)
-
-Users will prompted to specify which engine(s) to use to analyze extracted files. Extracted files can be examined through any of three methods:
-
-![File scanners](./images/hedgehog/images/zeek_file_carve_scanners.png)
-
-* scanning files with [**ClamAV**](https://www.clamav.net/); to enable this method, select **ZEEK_FILE_SCAN_CLAMAV** when specifying scanners for Zeek-carved files
-* submitting file hashes to [**VirusTotal**](https://www.virustotal.com/en/#search); to enable this method, select **ZEEK_FILE_SCAN_VTOT** when specifying scanners for Zeek-carved files, then manually edit `/opt/sensor/sensor_ctl/control_vars.conf` and specify the [VirusTotal API key](https://developers.virustotal.com/reference) in `VTOT_API2_KEY`
-* scanning files with [**Yara**](https://github.com/VirusTotal/yara); to enable this method, select **ZEEK_FILE_SCAN_YARA** when specifying scanners for Zeek-carved files
-* scanning portable executable (PE) files with [**Capa**](https://github.com/fireeye/capa); to enable this method, select **ZEEK_FILE_SCAN_CAPA** when specifying scanners for Zeek-carved files
-
-Files flagged as potentially malicious will be logged as Zeek `signatures.log` entries, and can be viewed in the **Signatures** dashboard in [OpenSearch Dashboards]({{ site.github.repository_url }}#DashboardsVisualizations) when forwarded to Malcolm.
-
-Hedgehog Linux provides an extracted files directory listing to browse and download Zeek-extracted files. As this interface is primarily intended to be accessed through the Malcolm user interface, this service is accessible only by IP addresses [included in the ACL for artifact reachback from Malcolm](#HedgehogACL) over port `8006/tcp`. The next two questions indicate whether or not Zeek-extracted files downloaded through this interface will be archived using the ZIP file format and what encryption password should be used, if any (either the ZIP archive file password or as the encryption key for AES-256-CBC-encrypted files if not using ZIP). Please read the Malcolm documentation for [**Automatic file extraction and scanning - User interface**](file-scanning.md#ZeekFileExtractionUI) for more information on how to access preserved files.
-
-![Extracted file server configuration](./images/hedgehog/images/file_server_zip.png)
-
-Finally, users will be presented with the list of configuration variables that will be used for capture, including the values which have been selected up to this point in this section. Upon choosing **OK** these values will be written back out to the sensor configuration file located at `/opt/sensor/sensor_ctl/control_vars.conf`. Editing this file manually should be done with care. After confirming these values, users will be presented with a confirmation that these settings have been written to the configuration file then returned to the welcome screen.
-
-## <a name="HedgehogConfigForwarding"></a> Configure Forwarding
-
-Select **Configure Forwarding** to set up forwarding logs and statistics from the sensor to an aggregator server, such as [Malcolm]({{ site.github.repository_url }}).
-
-![Configure forwarders](./images/hedgehog/images/forwarder_config.png)
-
-There are three forwarder services used on the sensor, each for forwarding a different type of log or sensor metric.
-
-### <a name="Hedgehogarkime-capture"></a>arkime-capture: Arkime session forwarding
-
-arkime-[capture](https://github.com/arkime/arkime/tree/master/capture) is not only used to capture PCAP files, but also to parse raw traffic into sessions and forward this session metadata to an [OpenSearch](https://opensearch.org/) database so it can be viewed in [Arkime viewer](https://arkime.com/), whether standalone or as part of a [Malcolm]({{ site.github.repository_url }}) instance. If using Hedgehog Linux with Malcolm, please read [Correlating Zeek logs and Arkime sessions]({{ site.github.repository_url }}#ZeekArkimeFlowCorrelation) in the Malcolm documentation for more information.
-
-First, select the OpenSearch connection transport protocol, either **HTTPS** or **HTTP**. If the metrics are being forwarded to Malcolm, select **HTTPS** to encrypt messages from the sensor to the aggregator using TLS v1.2 using ECDHE-RSA-AES128-GCM-SHA256. If **HTTPS** is chosen, users must choose whether to enable SSL certificate verification. When using a self-signed certificate (such as the one automatically created during [Malcolm's configuration]({{ site.github.repository_url }}#configure-authentication)), choose **None**.
-
-![OpenSearch connection protocol](./images/hedgehog/images/opensearch_connection_protocol.png) ![OpenSearch SSL verification](./images/hedgehog/images/opensearch_ssl_verification.png)
-
-Next, enter the **OpenSearch host** IP address (ie., the IP address of the aggregator) and port. These metrics are written to an OpenSearch database using a RESTful API, usually using port 9200. Depending on network configuration, users may need to open a firewall port to allow this connection from the sensor to the aggregator.
-
-![OpenSearch host and port](./images/hedgehog/images/arkime-capture-ip-port.png)
-
-Users will be asked to enter authentication credentials for the sensor's connections to the aggregator's OpenSearch API. After entering the username and the password, the sensor will attempt a test connection to OpenSearch using the connection information provided. If the Malcolm services have not yet been started, users may receive a **Connection refused** error. Select **Ignore Error** for the credentials to be accepted anyway.
-
-![OpenSearch username](./images/hedgehog/images/opensearch_username.png) ![OpenSearch password](./images/hedgehog/images/opensearch_password.png) ![Successful OpenSearch connection](./images/hedgehog/images/opensearch_connection_success.png)
-
-Users will be asked to provide a "password hash secret" for the Arkime viewer cluster. This value corresponds to the `passwordSecret` value in Arkime's [config.ini file](https://arkime.com/settings). Arkime uses this value to secure communication (specifically, the connection used when Arkime viewer retrieves a PCAP payload for display in its user interface) between Arkime viewers in instances of Malcolm and Hedgehog Linux. In other words, this value needs to be the same for the Malcolm instance and all of the instances of Hedgehog Linux forwarding Arkime sessions to that Malcolm instance. The corresponding value is set when [setting up authentication](#MalcolmAuthSetup) during the Malcolm configuration.
-
-Users will be asked if Arkime capture should enrich data using a WISE service. If a user is leveraging the WISE service, they will be prompted to enter the URL of the Arkime instance hosting WISE. By default, Hedgehog will use the OpenSearch credentials configured earlier to authenticate to the WISE service. 
-
-Arkime supports [compression](https://arkime.com/settings#writer-simple) for the PCAP files it creates. Select `none` (at the cost of requiring more storage for PCAP files saved on the sensor) or `zstd` (at the cost of higher CPU load when writing and reading PCAP files). If [`zstd`](https://en.wikipedia.org/wiki/Zstd?lang=en) is chosen, users will also be prompted for the compression level (something like `3` is probably a good choice).
-
-![PCAP compression](./images/hedgehog/images/pcap_compression.png)
-
-Finally, users be given the opportunity to review the Arkime `capture` options specified. Selecting **OK** will cause the parameters to be saved and will return to the configuration tool's welcome screen.
-
-![capture settings confirmation](./images/hedgehog/images/arkime_confirm.png)
-
-### <a name="HedgehogGetCerts"></a>ssl-client-receive: Receive client SSL files for filebeat from Malcolm
-
-As described above in the Malcolm configuration under [Setting up Authentication](#MalcolmAuthSetup), in order for a Hedgehog Linux to securely communicate with Malcolm, it needs the client certificates generated when users answered **Y** to "(Re)generate self-signed certificates for a remote log forwarder" during that setup. Malcolm can facilitate the secure transfer of these to a sensor running Hedgehog.
-
-![ssl-client-receive](./images/hedgehog/images/ssl_client_receive.png)
-
-*Select* ***ssl-client-receive*** *on Hedgehog*
-
-Select **ssl-client-receive** from the **Configuration Mode** options on the Hedgehog, then press **OK** when prompted "Run auth_setup on Malcolm 'Transfer self-signed client certificates...'." [Return](#MalcolmAuthSetup) to the Malcolm instance where `auth_setup` is running (or re-run it if needed) and press **OK**. Users will see a message with the title **ssl-client-transmit** that looks like this:
-
-![ssl-client-transmit](./images/hedgehog/images/ssl_client_transmit.png)
-
-*Run* ***auth_setup*** *and select* ***ssl-client-transmit*** *on Malcolm*
-
-Note Malcolm's IP address (`192.168.122.5` in the screenshot above) and the single-use code phrase (`8736-janet-kilo-tonight` in the screenshot above) and enter them on the Hedgehog:
-
-![ssl-client-receive-code](./images/hedgehog/images/ssl_client_receive_code.png)
-
-*Enter Malcolm IP address and single-use code phrase on Hedgehog*
-
-After a few seconds (hopefully) a progress bar will update and show the files have been 100% transfered. They are automatically saved into the `/opt/sensor/sensor_ctl/logstash-client-certificates` directory on the sensor.
-
-Press **OK** on the Malcolm instance. If Malcolm's `auth_setup` process was being during Malcolm's first run, Malcolm will continue to start up.
-
-### <a name="Hedgehogfilebeat"></a>filebeat: Zeek and Suricata log forwarding
-
-[Filebeat](https://www.elastic.co/products/beats/filebeat) is used to forward [Zeek](https://www.zeek.org/) and [Suricata](https://suricata.io/) logs to a remote [Logstash](https://www.elastic.co/products/logstash) instance for further enrichment prior to insertion into an [OpenSearch](https://opensearch.org/) database.
-
-To configure filebeat, first provide the log path (the same path previously configured for log file generation).
-
-![Configure filebeat for log forwarding](./images/hedgehog/images/filebeat_log_path.png)
-
-Users must also provide the IP address of the Logstash instance to which the logs are to be forwarded, and the port on which Logstash is listening. These logs are forwarded using the Beats protocol, generally over port 5044. Depending on network configuration, users may need to open a firewall port to allow this connection from the sensor to the aggregator.
-
-![Configure filebeat for log forwarding](./images/hedgehog/images/filebeat_ip_port.png)
-
-Users may specify a NetBox [site](https://demo.netbox.dev/static/docs/core-functionality/sites-and-racks/) to associate with the network traffic metadata forwarded to Malcolm by this sensor. See [**Asset Interaction Analysis**](asset-interaction-analysis.md#AssetInteractionAnalysis) for more information about NetBox.
-
-![NetBox site](./images/hedgehog/images/filebeat_site_config.png)
-
-Next users will be asked whether the connection used for log forwarding should be done **unencrypted** or over **SSL**. Unencrypted communication requires less processing overhead and is simpler to configure, but the contents of the logs may be visible to anyone able to intercept that traffic.
-
-![Filebeat SSL certificate verification](./images/hedgehog/images/filebeat_ssl.png)
-
-If **SSL** is chosen, users must choose whether to enable [SSL certificate verification](https://www.elastic.co/guide/en/beats/filebeat/current/configuring-ssl-logstash.html). If using a self-signed certificate (such as the one automatically created during [Malcolm's configuration]({{ site.github.repository_url }}#configure-authentication), choose **None**.
-
-![Unencrypted vs. SSL encryption for log forwarding](./images/hedgehog/images/filebeat_ssl_verify.png)
-
-The final step for SSL-encrypted log forwarding is to specify the SSL certificate authority, certificate, and key files. These files must match those used by the Logstash instance receiving the logs on the aggregator. The steps above under **[ssl-client-receive](#HedgehogGetCerts): Receive client SSL files for filebeat from Malcolm** should have taken care of the transfer of these files between Malcolm and Hedgehog. Otherwise, manually copy ("sneakernet") the files from  the `filebeat/certs/` subdirectory of the Malcolm installation to `/opt/sensor/sensor_ctl/logstash-client-certificates` on Hedgehog.
-
-![SSL certificate files](./images/hedgehog/images/filebeat_certs.png)
-
-Once all the filebeat parameters are specified, users will be presented with a summary of the settings related to the forwarding of these logs. Selecting **OK** will cause the parameters to be written to filebeat's configuration keystore under `/opt/sensor/sensor_ctl/logstash-client-certificates` and users will be returned to the configuration tool's welcome screen. If the Malcolm services have not yet been started, users may receive a **could not connect** error. Select **Ignore Error** for the settings to be accepted anyway.
-
-![Confirm filebeat settings](./images/hedgehog/images/filebeat_confirm.png)
-
-### <a name="Hedgehogmiscbeat"></a>miscbeat: System metrics forwarding
-
-The sensor uses [Fluent Bit](https://fluentbit.io/) to gather miscellaneous system resource metrics (CPU, network I/O, disk I/O, memory utilization, temperature, etc.) and the [Beats](https://www.elastic.co/guide/en/beats/filebeat/current/filebeat-input-tcp.html) protocol to forward these metrics to a remote [Logstash](https://www.elastic.co/products/logstash) instance for further enrichment prior to insertion into an [OpenSearch](https://opensearch.org/) database. Metrics categories can be enabled/disabled as described in the [autostart services](#HedgehogConfigAutostart) section of this document.
-
-This forwarder's configuration is almost identical to that of [filebeat](#Hedgehogfilebeat) in the previous section. Select `miscbeat` from the forwarding configuration mode options and follow the same steps outlined above to set up this forwarder.
-
-### <a name="HedgehogACL"></a>acl-configure: Configure ACL for artifact reachback from Malcolm
-
-Users will be shown a dialog for a list of IP addresses used to populate a firewall access control list (ACL) for hosts allowed to connect back to the sensor for retrieving session payloads from its PCAP files (over port `8005/tcp`) for display in Arkime viewer and for downloading files (over port `8006/tcp`) [extracted and preserved by Zeek](#HedgehogZeekFileExtraction). The list will be prepopulated with the IP address entered a few screens prior to this one.
-
-![PCAP retrieval ACL](./images/hedgehog/images/malcolm_arkime_reachback_acl.png)
-
-### <a name="HedgehogTags"></a>tags-configure: Specify extra tags for forwarded logs
-
-Users may populate a list of values, one per line, to be added to the `tags` field for logs forwarded from the sensor to a Malcolm aggregator. These tags may make it easier to identify or search for data during analysis.
-
-![Extra tags](./images/hedgehog/images/forwarder_tags_config.png)
-
-### <a name="HedgehogConfigAutostart"></a>Autostart services
-
-Once the forwarders have been configured, the final step is to **Configure Autostart Services**. Choose this option from the configuration mode menu after the welcome screen of the sensor configuration tool.
-
-Despite configuring capture and/or forwarder services as described in previous sections, only services enabled in the autostart configuration will run when the sensor starts up. The available autostart processes are as follows (recommended services are in **bold text**):
-
-* **AUTOSTART_ARKIME** - [capture](#Hedgehogarkime-capture) PCAP engine for traffic capture, as well as traffic parsing and metadata insertion into OpenSearch for viewing in [Arkime](https://arkime.com/). If using Hedgehog Linux along with [Malcolm]({{ site.github.repository_url }}) or another Arkime installation, this is probably the preferable packet capture engine.
-* **AUTOSTART_CLAMAV_UPDATES** - Virus database update service for ClamAV (requires sensor to be connected to the Internet)
-* **AUTOSTART_EXTRACTED_FILE_HTTP_SERVER** - the [HTTPS server](file-scanning.md#ZeekFileExtractionUI) providing access to the directory containing [Zeek-extracted files](#HedgehogZeekFileExtraction)
-* **AUTOSTART_FILEBEAT** - [filebeat](#Hedgehogfilebeat) Zeek and Suricata log forwarder 
-* **AUTOSTART_FLUENTBIT_AIDE** - [Fluent Bit](https://fluentbit.io/) agent [monitoring](https://docs.fluentbit.io/manual/pipeline/inputs/exec) [AIDE](https://aide.github.io/) file system integrity checks
-* **AUTOSTART_FLUENTBIT_AUDITLOG** - [Fluent Bit](https://fluentbit.io/) agent [monitoring](https://docs.fluentbit.io/manual/pipeline/inputs/tail) [auditd](https://man7.org/linux/man-pages/man8/auditd.8.html) logs
-* *AUTOSTART_FLUENTBIT_KMSG* - [Fluent Bit](https://fluentbit.io/) agent [monitoring](https://docs.fluentbit.io/manual/pipeline/inputs/kernel-logs) the Linux kernel log buffer (these are generally reflected in the Systemd log as well, which may make this agent redundant)
-* **AUTOSTART_FLUENTBIT_METRICS** - [Fluent Bit](https://fluentbit.io/) agent for collecting [various](https://docs.fluentbit.io/manual/pipeline/inputs) system resource and performance metrics
-* **AUTOSTART_FLUENTBIT_SYSTEMD** - [Fluent Bit](https://fluentbit.io/) agent [monitoring](https://docs.fluentbit.io/manual/pipeline/inputs/systemd) log messages from the Linux Journald daemon
-* **AUTOSTART_FLUENTBIT_THERMAL** - [Fluent Bit](https://fluentbit.io/) agent [monitoring](https://docs.fluentbit.io/manual/pipeline/inputs/thermal) system temperatures (only applicable on actual hardware, not if Hedgehog is running on a virtual machine)
-* **AUTOSTART_MISCBEAT** - [filebeat](https://www.elastic.co/guide/en/beats/filebeat/current/filebeat-input-tcp.html) forwarder which sends system metrics collected by [Fluent Bit](https://fluentbit.io/) to a remote Logstash instance (e.g., [Malcolm]({{ site.github.repository_url }})'s)
-* *AUTOSTART_NETSNIFF* - [netsniff-ng](http://netsniff-ng.org/) PCAP engine for saving packet capture (PCAP) files
-* **AUTOSTART_PRUNE_PCAP** - storage space monitor to ensure PCAP files do not consume more than 90% of the total size of the storage volume to which PCAP files are written
-* **AUTOSTART_PRUNE_ZEEK** - storage space monitor to ensure Zeek logs do not consume more than 90% of the total size of the storage volume to which Zeek logs are written
-* **AUTOSTART_SURICATA** - [Suricata](https://suricata.io/) traffic analysis engine
-* **AUTOSTART_SURICATA_UPDATES** - Rule update service for Suricata (requires sensor to be connected to the Internet)
-* *AUTOSTART_TCPDUMP* - [tcpdump](https://www.tcpdump.org/) PCAP engine for saving packet capture (PCAP) files
-* **AUTOSTART_ZEEK** - [Zeek](https://www.zeek.org/) traffic analysis engine
-
-Note that only one packet capture engine ([capture](https://arkime.com/), [netsniff-ng](http://netsniff-ng.org/), or [tcpdump](https://www.tcpdump.org/)) can be used.
-
-![Autostart services](./images/hedgehog/images/autostarts.png)
-
-Once autostart services are selected, users will be prompted to confirm the selections. Doing so will cause these values to be written back out to the `/opt/sensor/sensor_ctl/control_vars.conf` configuration file.
-
-![Autostart services confirmation](./images/hedgehog/images/autostarts_confirm.png)
-
-Once sensor configuration is complete, users should **reboot** Hedgehog to ensure all new settings take effect. If rebooting is not an option, click the **Restart Sensor Services** menu icon in the top menu bar, or open a terminal and run:
+As of Malcolm v25.12.0, the same base operating system is used for both Malcolm and Hedgehog Linux. All of the sections above under [Malcolm Installation and Configuration](#MalcolmInstallAndConfig) also apply to Hedgehog Linux.
+
+The following section outlines the Hedgehog-specific steps needed to establish communication between the Hedgehog Linux sensor and the Malcolm aggregator.
+
+### <a name="HedgehogCommConfig"></a> Configuring Communication Between Hedgehog and Malcolm
+
+Follow the Malcolm guidelines above for [**Configuring Network Interfaces**](#NetConf) and [**Configuring Hostname, Time Sync, and SSH Access**](#MalcolmTimeSync).
+
+The first time Hedgehog Linux boots the **Malcolm Configuration** wizard will start automatically. This same configuration script can be run again later by running [`./scripts/configure`](malcolm-config.md#ConfigAndTuning) from the Malcolm installation directory, or clicking the **Configure Malcolm** 🔳 icon in the top panel.
+
+The sections above for [**Configuring Malcolm**](#MalcolmConfig) and the [**Malcolm Configuration Menu Items**](#MalcolmConfigItems) are applicable for Hedgehog Linux, with the following notable exceptions:
+
+* Several configuration items deal with how Hedgehog Linux components communicate with the remote Malcolm aggregator:
+    * **Primary Document Store**
+        * The [document store type](opensearch-instances.md#OpenSearchInstance) (either `opensearch-remote` or `elasticsearch-remote`) of the Malcolm aggregator
+    * **Remote Malcolm Hostname or IP**
+        * Specifying the IP address or hostname of the Malcolm aggregator here will automatically populate the following items (or, they can be set or overriden individually):
+            * **Primary OpenSearch/Elasticsearch URL**
+                * The URL of the remote OpenSearch/Elasticsearch instance to be used as the data store (e.g., `https://malcolm.example.org:9200` or `https://service.whatever.org/elasticsearch/`)
+            * **Logstash Host**
+                * The IP address or hostname of the Malcolm aggregator, a colon (`:`), and the Logstash port (5044). If the sensor is capturing locally but *not* forwarding to a Malcolm aggregator, explicitly set this to `disabled`.
+            * **Arkime WISE URL**
+                * The URL for the Malcolm aggregator's [Arkime WISE](arkime.md#ArkimeWISE) service. If the sensor is capturing locally but *not* forwarding to a Malcolm aggregator, explicitly set this to `disabled`.
+            * **Malcolm Reachback ACL**
+                * A list of IP addresses used to populate a firewall access control list (ACL) for hosts allowed to connect back to the sensor for retrieving session payloads from its PCAP files (over port `8005/tcp`) for display in Arkime viewer and for downloading files (over port `8006/tcp`) [extracted and preserved by Zeek](file-scanning.md#ZeekFileExtraction). Minimally, this list should include the IP address of the Malcolm aggregator. This is only automatically populated from **Remote Malcolm Hostname or IP** if its value is an IP address.
+    * **NetBox Site Name**
+        * This site name will be associated with the traffic captured on this sensor and used for NetBox enrichment lookups performed by the Malcolm aggregator.
+* Some examples of these values:
 
 ```
-/opt/sensor/sensor_ctl/shutdown && sleep 10 && /opt/sensor/sensor_ctl/supervisor.sh
+--- Malcolm Configuration Menu ---
+…
+│   ├── 18. Logstash Host (current: malcolm.home.arpa:5044)
+│   ├── 19. Malcolm Reachback ACL (current: ['192.168.122.1', '192.168.122.5', '10.0.0.130'])
+│   └── 20. Primary Document Store (current: opensearch-remote)
+│       ├── 21. Primary OpenSearch/Elasticsearch URL (current: https://malcolm.home.arpa:9200)
+…
+├── 30. Enable Arkime Analysis (current: Yes)
+│   └── 31. Arkime WISE URL (current: https://malcolm.home.arpa/wise/)
+…
+├── 55. NetBox Mode (current: Remote)
+│   └── 56. NetBox Site Name (current: Remote Site ABC)
+…
 ```
 
-This will cause the sensor services controller to stop, wait a few seconds, and restart. Users may check the status of the sensor's processes by choosing **Sensor Status** from the sensor's kiosk mode, clicking the **Sensor Service Status** toolbar icon, or running `/opt/sensor/sensor_ctl/status` from the command line:
+* Hedgehog Linux uses [Fluent Bit](https://fluentbit.io/) to gather miscellaneous system resource metrics (CPU, network I/O, disk I/O, memory utilization, temperature, etc.) and the [Beats](https://www.elastic.co/guide/en/beats/filebeat/current/filebeat-input-tcp.html) protocol to forward these metrics to a Malcolm aggregator's [Logstash](https://www.elastic.co/products/logstash) service for further enrichment prior to insertion into its [OpenSearch](https://opensearch.org/) database. Metrics categories can be enabled/disabled with the **Forward …** options under the **Run Profile** section:
+
 
 ```
-$ /opt/sensor/sensor_ctl/status 
-arkime:arkime-capture            RUNNING   pid 6455, uptime 0:03:17
-arkime:arkime-viewer             RUNNING   pid 6456, uptime 0:03:17
-beats:filebeat                   RUNNING   pid 6457, uptime 0:03:17
-beats:miscbeat                   RUNNING   pid 6458, uptime 0:03:17
-clamav:clamav-service            RUNNING   pid 6459, uptime 0:03:17
-clamav:clamav-updates            RUNNING   pid 6461, uptime 0:03:17
-fluentbit-auditlog               RUNNING   pid 6463, uptime 0:03:17
-fluentbit-kmsg                   STOPPED   Not started
-fluentbit-metrics:cpu            RUNNING   pid 6466, uptime 0:03:17
-fluentbit-metrics:df             RUNNING   pid 6471, uptime 0:03:17
-fluentbit-metrics:disk           RUNNING   pid 6468, uptime 0:03:17
-fluentbit-metrics:mem            RUNNING   pid 6472, uptime 0:03:17
-fluentbit-metrics:mem_p          RUNNING   pid 6473, uptime 0:03:17
-fluentbit-metrics:netif          RUNNING   pid 6474, uptime 0:03:17
-fluentbit-systemd                RUNNING   pid 6478, uptime 0:03:17
-fluentbit-thermal                RUNNING   pid 6480, uptime 0:03:17
-netsniff:netsniff-enp1s0         STOPPED   Not started
-prune:prune-pcap                 RUNNING   pid 6484, uptime 0:03:17
-prune:prune-zeek                 RUNNING   pid 6486, uptime 0:03:17
-supercronic                      RUNNING   pid 6490, uptime 0:03:17
-suricata                         RUNNING   pid 6501, uptime 0:03:17
-tcpdump:tcpdump-enp1s0           STOPPED   Not started
-zeek:capa                        RUNNING   pid 6553, uptime 0:03:17
-zeek:clamav                      RUNNING   pid 6512, uptime 0:03:17
-zeek:logger                      RUNNING   pid 6554, uptime 0:03:17
-zeek:virustotal                  STOPPED   Not started
-zeek:watcher                     RUNNING   pid 6510, uptime 0:03:17
-zeek:yara                        RUNNING   pid 6548, uptime 0:03:17
-zeek:zeekctl                     RUNNING   pid 6502, uptime 0:03:17
+--- Malcolm Configuration Menu ---
+…
+├── 6. Run Profile (current: hedgehog)
+…
+│   ├── 8. Forward AIDE Results (current: Yes)
+│   ├── 9. Forward Audit Log (current: Yes)
+│   ├── 10. Forward CPU Utilization (current: Yes)
+│   ├── 11. Forward Disk Operation Statistics (current: Yes)
+│   ├── 12. Forward Disk Utilization (current: Yes)
+│   ├── 13. Forward Kernel Messages (current: Yes)
+│   ├── 14. Forward Memory Utilization (current: Yes)
+│   ├── 15. Forward Network Activity (current: Yes)
+│   ├── 16. Forward Systemd Journal Logs (current: Yes)
+│   ├── 17. Forward Thermal Readings (current: Yes)
+…
 ```
 
-### <a name="HedgehogDiskUsage"></a>Managing disk usage
+The `auth_setup` script on Hedgehog Linux has a **Receive client certifictes from Malcolm** option corresponding to Malcolm's **Transfer self-signed client certificates to a remote log forwarder** option described [above](#MalcolmAuthSetup). In order for a Hedgehog Linux to securely communicate with Malcolm, it needs the client certificates generated when users answered **Y** to **(Re)generate self-signed certificates for a remote log forwarder** during that setup. Malcolm can facilitate the secure transfer of these to a sensor running Hedgehog.
 
-In instances where Hedgehog Linux is deployed with the intention of running indefinitely, eventually the question arises of what to do when the file systems used for storing Malcolm's artifacts (e.g., PCAP files, raw logs, [extracted files](file-scanning.md#ZeekFileExtraction), etc.). Hedgehog Linux provides options for tuning the "aging out" (deletion) of old artifacts to make room for newer data. These are configured during [Configure Capture](#HedgehogCapture) and are stored in the `/opt/sensor/sensor_ctl/control_vars.conf` configuration file. Editing this file manually should be done with care.
+Select **Receive client certificates from Malcolm**, then press **OK** when prompted "Run auth_setup on Malcolm and select 'Transfer self-signed client certificates...'".
 
-* PCAP files can be periodically [pruned]({{ site.github.repository_url }}/blob/{{ site.github.build_revision }}/shared/bin/prune_files.sh) according to these variables:
-    - `PCAP_MAX_DISK_FILL` - a maximum fill percentage for the file system containing the PCAP files; in other words, if the disk is more than this percentage utilized, the prune condition triggers
-    - `PCAP_PRUNE_CHECK_SECONDS` - the interval between checking the PCAP prune condition, in seconds
-    - `ARKIME_FREESPACEG` - this value is [used by Arkime](https://arkime.com/settings#freespaceg) to determine when to delete the oldest PCAP files. Note that this variable represents the amount of free/unused/available desired on the file system: e.g., a value of `5%` means "delete PCAP files if the amount of unused storage on the file system falls below 5%" (default `10%`). Observant users will note that there overlap in Arkime's PCAP deletion process and the process using the `PCAP_MAX_DISK_FILL` above: either process may delete old PCAP files depending on which conditions trigger first.
-* Zeek logs, files [extracted by Zeek](file-scanning.md#ZeekFileExtraction), and Suricata logs are [pruned]({{ site.github.repository_url }}/blob/{{ site.github.build_revision }}/shared/bin/prune_files.sh) according to these variables:
-    - `ZEEK_MAX_DISK_FILL` - a maximum fill percentage for the file system containing these artifacts; in other words, if the disk is more than this percentage utilized, the prune condition triggers
-    - `ZEEK_PRUNE_CHECK_SECONDS` - the interval between checking the prune condition for these artifacts, in seconds
+![SSL Certificate Transfer, Hedgehog Side - 01](./images/screenshots/ssl-cert-transfer-03.png)
+
+![SSL Certificate Transfer, Hedgehog Side - 02](./images/screenshots/ssl-cert-transfer-04.png)
+
+[Return](#MalcolmAuthSetup) to the Malcolm instance where `auth_setup` is running (or re-run it if needed) and press **OK**. Users will see a message with the title **ssl-client-transmit** that looks like this:
+
+![SSL Certificate Transfer, Malcolm Side - 02](./images/screenshots/ssl-cert-transfer-02.png)
+
+Note Malcolm's IP address (`192.168.122.5` in the screenshot above) and the single-use code phrase (`2033-inside-century-simon` in the screenshot above) and enter them on the Hedgehog:
+
+![SSL Certificate Transfer, Hedgehog Side - 03](./images/screenshots/ssl-cert-transfer-05.png)
+
+After a few seconds a progress bar will update and show the files have been 100% transfered. They are automatically saved into the `~/Malcolm/filebeat/certs` directory on the sensor.
+
+![SSL Certificate Transfer, Hedgehog Side - 03](./images/screenshots/ssl-cert-transfer-07.png)
+
+Once the has been completed, users can click the "play" icon (▷) in the panel at the top of the [desktop](#MalcolmDesktop) to start Malcolm under the [Hedgehog run profile](live-analysis.md#Profiles).
 
 ## <a name="Verify"></a>Verifying Traffic Capture and Forwarding
 
@@ -880,7 +693,7 @@ If logged into the Malcolm [desktop environment](#MalcolmDesktop), click the Ark
 
 As Malcolm is using [self-signed TLS certificates](authsetup.md#TLSCerts), users will likely have to confirm a browser exception to allow the self-signed certificates to proceed. Enter the credentials specified during [the configure authentication process](#MalcolmAuthSetup).
 
-Arkime's sessions view will be displayed. Filter on the `node` field to view records from a specific Hedgehog Linux sensor. In the search bar, enter `node == hedgehoghostname` (replacing `hedgehoghostname` with the [hostname](#HedgehogInterfaces) configured for Hedgehog Linux). See the [Search Queries in Arkime and OpenSearch](queries-cheat-sheet.md#SearchCheatSheet) cheat sheet for more search syntax hints.
+Arkime's sessions view will be displayed. Filter on the `node` field to view records from a specific Hedgehog Linux sensor. In the search bar, enter `node == hedgehoghostname` (replacing `hedgehoghostname` with the [hostname](#MalcolmTimeSync) configured for Hedgehog Linux). See the [Search Queries in Arkime and OpenSearch](queries-cheat-sheet.md#SearchCheatSheet) cheat sheet for more search syntax hints.
 
 ![Arkime's Sessions view](./images/screenshots/arkime_sessions_node_filter.png)
 

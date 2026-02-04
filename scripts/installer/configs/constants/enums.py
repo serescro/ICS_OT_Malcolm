@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2025 Battelle Energy Alliance, LLC.  All rights reserved.
+# Copyright (c) 2026 Battelle Energy Alliance, LLC.  All rights reserved.
 
 
 from enum import Enum, auto
@@ -142,3 +142,10 @@ class FilePreservationMode(Enum):
     QUARANTINED = "quarantined"
     ALL = "all"
     NONE = "none"
+
+
+# Arkime compression types
+class ArkimePCAPCompression(Enum):
+    NONE = "none"
+    GZIP = "gzip"
+    ZSTD = "zstd"

@@ -22,7 +22,7 @@ Under **Workflow permissions**, select **Read and write permissions** to allow t
 
 ![GitHub Actions permissions](./images/screenshots/github-actions-permissions.png)
 
-### Secrets and variables
+### <a name="secrets-and-variables"></a>Secrets and variables
 
 Expand **✴ Secrets and variables** in the left menu panel under **Security**, then select **Actions** from that menu.
 
@@ -87,7 +87,7 @@ Clicking on a package name will show details about that package. Note that most 
 
 ## Modifying workflow files
 
-### Triggers
+### <a name="triggers"></a>Triggers
 
 [Malcolm's workflow files]({{ site.github.repository_url }}/tree/{{ site.github.build_revision }}/.github/workflows/) are configured to build when any of the following [triggers](https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows) occur (found in the `on:` section at the top of each workflow file):
 
@@ -102,15 +102,14 @@ These triggers may be modified according to the users' needs.
 
 Each container build workflow actually runs two paths in parallel: one for building and pushing the x86-64 images and one for building and pushing the arm64 images. As of the writing of this document, [Arm-based Linux runners](https://github.blog/changelog/2024-06-03-actions-arm-based-linux-and-windows-runners-are-now-in-public-beta/) are not yet publicly available (but are expected to be offered for open source and personal accounts by the end of 2024). For this reason, the arm64 builds are emulated with [QEMU](https://github.com/marketplace/actions/docker-setup-qemu). These emulated builds take *much* longer than their native x86-64 counterparts. Users who do not need the arm64 images may comment out that platform (by adding a `#` to the beginning of its line) under `jobs.docker.strategy.matrix.platform` in the workflow YML file.
 
-## Convenience scripts for development
+## <a name="convenience-scripts-for-development"></a>Convenience scripts for development
 
 As mentioned earlier, Malcolm images built using the instructions in this document are are named according to the pattern `ghcr.io/username/malcolm/image:branch`. However, note that the `image:` values found in [`docker-compose.yml`]({{ site.github.repository_url }}/blob/{{ site.github.build_revision }}/docker-compose.yml) (and in the [Kubernetes](kubernetes.md#Kubernetes) [manifests]({{ site.github.repository_url }}/blob/{{ site.github.build_revision }}/kubernetes/)) look like `ghcr.io/idaholab/malcolm/opensearch:{{ site.malcolm.version }}`, using the OpenSearch container as an example. To run a local instance of Malcolm using these images instead of the official `ghcr.io/idaholab` ones, users will need to edit their `docker-compose.yml` file(s) and replace the `image:` tags according to this new pattern, or use the bash helper script [`./scripts/github_image_helper.sh`]({{ site.github.repository_url }}/blob/{{ site.github.build_revision }}/scripts/github_image_helper.sh) to pull the repository images and re-tag them with `ghcr.io/idaholab` and the current Malcolm version (e.g., `{{ site.malcolm.version }}`).
 
-Before explaining that script, a discussion of the workflow files for the [Hedgehog Linux](live-analysis.md#Hedgehog) ([hedgehog-iso-build-docker-wrap-push-ghcr.yml
-]({{ site.github.repository_url }}/tree/{{ site.github.build_revision }}/.github/workflows/hedgehog-iso-build-docker-wrap-push-ghcr.yml)) and [Malcolm](malcolm-iso.md#ISO) ([malcolm-iso-build-docker-wrap-push-ghcr.yml
-]({{ site.github.repository_url }}/tree/{{ site.github.build_revision }}/.github/workflows/malcolm-iso-build-docker-wrap-push-ghcr.yml)) installer ISOs is warranted. The installer images are [ISO 9660](https://en.wikipedia.org/wiki/ISO_9660)-formatted files, not container images, so one may reasonably wonder about the purpose of the `ghcr.io/username/malcolm/malcolm:main` and `ghcr.io/username/malcolm/hedgehog:main` images pushed to ghcr.io. 
+Before explaining that script, a discussion of the workflow files for the [Malcolm](malcolm-iso.md#ISO) ([malcolm-iso-build-docker-wrap-push-ghcr.yml
+]({{ site.github.repository_url }}/tree/{{ site.github.build_revision }}/.github/workflows/malcolm-iso-build-docker-wrap-push-ghcr.yml)) (and its Hedgehog run profile variant) installer ISO is warranted. The installer images are [ISO 9660](https://en.wikipedia.org/wiki/ISO_9660)-formatted files, not container images, so one may reasonably wonder about the purpose of the `ghcr.io/username/malcolm/malcolm:main` and `ghcr.io/username/malcolm/hedgehog:main` images pushed to ghcr.io. 
 
-Examining [`malcolm-iso/Dockerfile`]({{ site.github.repository_url }}/tree/{{ site.github.build_revision }}/malcolm-iso/Dockerfile) and [`hedgehog-iso/Dockerfile`]({{ site.github.repository_url }}/tree/{{ site.github.build_revision }}/hedgehog-iso/Dockerfile), one will see that these container images are just [thin wrappers](https://github.com/mmguero/docker-qemu-live-iso) around the ISO 9660 image files built during their respective workflows. These wrapper images serve two purposes:
+Examining [`malcolm-iso/Dockerfile`]({{ site.github.repository_url }}/tree/{{ site.github.build_revision }}/malcolm-iso/Dockerfile), one will see that these container images are just [thin wrappers](https://github.com/mmguero/docker-qemu-live-iso) around the ISO 9660 image files built during their respective workflows. These wrapper images serve two purposes:
 
 * To provide an HTTP server from which the ISO itself can be downloaded
 * To boot a live ISO image in QEMU (based on [`tianon/qemu:native`](https://github.com/tianon/docker-qemu))
@@ -199,45 +198,51 @@ xxxxxxxxxxxx: Pull complete
 Verify that the images were pulled. Note that users will see two tags for each image: one tagged with the username and branch (e.g., `ghcr.io/romeogdetlevjr/malcolm/api:main`) and another tagged with `ghcr.io/idaholab` and the Malcolm version (e.g., `ghcr.io/idaholab/malcolm/api:{{ site.malcolm.version }}`).
 
 ```bash
-$ docker images | grep romeogdetlevjr/malcolm
-ghcr.io/idaholab/malcolm/zeek                   {{ site.malcolm.version }}       xxxxxxxxxxxx   10 minutes ago   1.39GB
-ghcr.io/romeogdetlevjr/malcolm/zeek             main          xxxxxxxxxxxx   10 minutes ago   1.39GB
-ghcr.io/idaholab/malcolm/dashboards             {{ site.malcolm.version }}       xxxxxxxxxxxx   13 minutes ago   1.55GB
-ghcr.io/romeogdetlevjr/malcolm/dashboards       main          xxxxxxxxxxxx   13 minutes ago   1.55GB
-ghcr.io/idaholab/malcolm/suricata               {{ site.malcolm.version }}       xxxxxxxxxxxx   14 minutes ago   339MB
-ghcr.io/romeogdetlevjr/malcolm/suricata         main          xxxxxxxxxxxx   14 minutes ago   339MB
-ghcr.io/idaholab/malcolm/file-monitor           {{ site.malcolm.version }}       xxxxxxxxxxxx   15 minutes ago   712MB
-ghcr.io/romeogdetlevjr/malcolm/file-monitor     main          xxxxxxxxxxxx   15 minutes ago   712MB
-ghcr.io/idaholab/malcolm/redis                  {{ site.malcolm.version }}       xxxxxxxxxxxx   15 minutes ago   55.4MB
-ghcr.io/romeogdetlevjr/malcolm/redis            main          xxxxxxxxxxxx   15 minutes ago   55.4MB
-ghcr.io/idaholab/malcolm/nginx-proxy            {{ site.malcolm.version }}       xxxxxxxxxxxx   16 minutes ago   160MB
-ghcr.io/romeogdetlevjr/malcolm/nginx-proxy      main          xxxxxxxxxxxx   16 minutes ago   160MB
-ghcr.io/idaholab/malcolm/pcap-capture           {{ site.malcolm.version }}       xxxxxxxxxxxx   16 minutes ago   137MB
-ghcr.io/romeogdetlevjr/malcolm/pcap-capture     main          xxxxxxxxxxxx   16 minutes ago   137MB
-ghcr.io/idaholab/malcolm/htadmin                {{ site.malcolm.version }}       xxxxxxxxxxxx   16 minutes ago   246MB
-ghcr.io/romeogdetlevjr/malcolm/htadmin          main          xxxxxxxxxxxx   16 minutes ago   246MB
-ghcr.io/romeogdetlevjr/malcolm/file-upload      main          xxxxxxxxxxxx   16 minutes ago   250MB
-ghcr.io/idaholab/malcolm/file-upload            {{ site.malcolm.version }}       xxxxxxxxxxxx   16 minutes ago   250MB
-ghcr.io/idaholab/malcolm/logstash-oss           {{ site.malcolm.version }}       xxxxxxxxxxxx   16 minutes ago   1.49GB
-ghcr.io/romeogdetlevjr/malcolm/logstash-oss     main          xxxxxxxxxxxx   16 minutes ago   1.49GB
-ghcr.io/idaholab/malcolm/netbox                 {{ site.malcolm.version }}       xxxxxxxxxxxx   17 minutes ago   1.66GB
-ghcr.io/romeogdetlevjr/malcolm/netbox           main          xxxxxxxxxxxx   17 minutes ago   1.66GB
-ghcr.io/romeogdetlevjr/malcolm/filebeat-oss     main          xxxxxxxxxxxx   18 minutes ago   405MB
-ghcr.io/idaholab/malcolm/filebeat-oss           {{ site.malcolm.version }}       xxxxxxxxxxxx   18 minutes ago   405MB
-ghcr.io/romeogdetlevjr/malcolm/postgresql       main          xxxxxxxxxxxx   18 minutes ago   303MB
-ghcr.io/idaholab/malcolm/postgresql             {{ site.malcolm.version }}       xxxxxxxxxxxx   18 minutes ago   303MB
-ghcr.io/idaholab/malcolm/arkime                 {{ site.malcolm.version }}       xxxxxxxxxxxx   18 minutes ago   802MB
-ghcr.io/romeogdetlevjr/malcolm/arkime           main          xxxxxxxxxxxx   18 minutes ago   802MB
-ghcr.io/idaholab/malcolm/opensearch             {{ site.malcolm.version }}       xxxxxxxxxxxx   18 minutes ago   1.42GB
-ghcr.io/romeogdetlevjr/malcolm/opensearch       main          xxxxxxxxxxxx   18 minutes ago   1.42GB
-ghcr.io/idaholab/malcolm/pcap-monitor           {{ site.malcolm.version }}       xxxxxxxxxxxx   18 minutes ago   176MB
-ghcr.io/romeogdetlevjr/malcolm/pcap-monitor     main          xxxxxxxxxxxx   18 minutes ago   176MB
-ghcr.io/idaholab/malcolm/dashboards-helper      {{ site.malcolm.version }}       xxxxxxxxxxxx   18 minutes ago   233MB
-ghcr.io/romeogdetlevjr/malcolm/dashboards-helpermain          xxxxxxxxxxxx   18 minutes ago   233MB
-ghcr.io/idaholab/malcolm/freq                   {{ site.malcolm.version }}       xxxxxxxxxxxx   18 minutes ago   153MB
-ghcr.io/romeogdetlevjr/malcolm/freq             main          xxxxxxxxxxxx   18 minutes ago   153MB
-ghcr.io/idaholab/malcolm/api                    {{ site.malcolm.version }}       xxxxxxxxxxxx   18 minutes ago   169MB
-ghcr.io/romeogdetlevjr/malcolm/api              main          xxxxxxxxxxxx   18 minutes ago   169MB
-ghcr.io/idaholab/malcolm/keycloak               {{ site.malcolm.version }}       xxxxxxxxxxxx   18 minutes ago   533MB
-ghcr.io/romeogdetlevjr/malcolm/keycloak         main          xxxxxxxxxxxx   18 minutes ago   533MB
+$ docker images 2>&1 | grep -P '(idaholab|romeogdetlevjr)/malcolm' | sort -k2,2n
+ghcr.io/idaholab/malcolm/zeek:{{ site.malcolm.version }}                       0aba0739d0b2       1.56GB
+ghcr.io/romeogdetlevjr/malcolm/zeek:main                       0aba0739d0b2       1.56GB
+ghcr.io/idaholab/malcolm/logstash-oss:{{ site.malcolm.version }}               1c8ef521a9ad       1.54GB
+ghcr.io/romeogdetlevjr/malcolm/logstash-oss:main               1c8ef521a9ad       1.54GB
+ghcr.io/idaholab/malcolm/netbox:{{ site.malcolm.version }}                     22b7c2384bbe       2.18GB
+ghcr.io/romeogdetlevjr/malcolm/netbox:main                     22b7c2384bbe       2.18GB
+ghcr.io/idaholab/malcolm/strelka-frontend:{{ site.malcolm.version }}           232931103da0       81.8MB
+ghcr.io/romeogdetlevjr/malcolm/strelka-frontend:main           232931103da0       81.8MB
+ghcr.io/idaholab/malcolm/postgresql:{{ site.malcolm.version }}                 27059b27daf2        336MB
+ghcr.io/romeogdetlevjr/malcolm/postgresql:main                 27059b27daf2        336MB
+ghcr.io/idaholab/malcolm/api:{{ site.malcolm.version }}                        29d428204f4a        201MB
+ghcr.io/romeogdetlevjr/malcolm/api:main                        29d428204f4a        201MB
+ghcr.io/idaholab/malcolm/pcap-monitor:{{ site.malcolm.version }}               582fff4cdb4e        198MB
+ghcr.io/romeogdetlevjr/malcolm/pcap-monitor:main               582fff4cdb4e        198MB
+ghcr.io/idaholab/malcolm/dashboards-helper:{{ site.malcolm.version }}          75b420a83536        233MB
+ghcr.io/romeogdetlevjr/malcolm/dashboards-helper:main          75b420a83536        233MB
+ghcr.io/idaholab/malcolm/htadmin:{{ site.malcolm.version }}                    7e5a804dc944        247MB
+ghcr.io/romeogdetlevjr/malcolm/htadmin:main                    7e5a804dc944        247MB
+ghcr.io/idaholab/malcolm/pcap-capture:{{ site.malcolm.version }}               93b9d4ad4320        156MB
+ghcr.io/romeogdetlevjr/malcolm/pcap-capture:main               93b9d4ad4320        156MB
+ghcr.io/idaholab/malcolm/redis:{{ site.malcolm.version }}                      98f21df2e899       52.5MB
+ghcr.io/romeogdetlevjr/malcolm/redis:main                      98f21df2e899       52.5MB
+ghcr.io/idaholab/malcolm/file-upload:{{ site.malcolm.version }}                9c5527615eba        290MB
+ghcr.io/romeogdetlevjr/malcolm/file-upload:main                9c5527615eba        290MB
+ghcr.io/idaholab/malcolm/opensearch:{{ site.malcolm.version }}                 a634739450dd       1.91GB
+ghcr.io/romeogdetlevjr/malcolm/opensearch:main                 a634739450dd       1.91GB
+ghcr.io/idaholab/malcolm/freq:{{ site.malcolm.version }}                       acfae2f99ce6        149MB
+ghcr.io/romeogdetlevjr/malcolm/freq:main                       acfae2f99ce6        149MB
+ghcr.io/idaholab/malcolm/strelka-manager:{{ site.malcolm.version }}            b6a1f19907e5       54.8MB
+ghcr.io/romeogdetlevjr/malcolm/strelka-manager:main            b6a1f19907e5       54.8MB
+ghcr.io/idaholab/malcolm/arkime:{{ site.malcolm.version }}                     b87bff629400        861MB
+ghcr.io/romeogdetlevjr/malcolm/arkime:main                     b87bff629400        861MB
+ghcr.io/idaholab/malcolm/keycloak:{{ site.malcolm.version }}                   d0990b40102f        549MB
+ghcr.io/romeogdetlevjr/malcolm/keycloak:main                   d0990b40102f        549MB
+ghcr.io/idaholab/malcolm/suricata:{{ site.malcolm.version }}                   dd2ead05629b        362MB
+ghcr.io/romeogdetlevjr/malcolm/suricata:main                   dd2ead05629b        362MB
+ghcr.io/idaholab/malcolm/dashboards:{{ site.malcolm.version }}                 e83df099698b        1.8GB
+ghcr.io/romeogdetlevjr/malcolm/dashboards:main                 e83df099698b        1.8GB
+ghcr.io/idaholab/malcolm/filescan:{{ site.malcolm.version }}                   ea26f1388898        363MB
+ghcr.io/romeogdetlevjr/malcolm/filescan:main                   ea26f1388898        363MB
+ghcr.io/idaholab/malcolm/filebeat-oss:{{ site.malcolm.version }}               f27b54760c87        470MB
+ghcr.io/romeogdetlevjr/malcolm/filebeat-oss:main               f27b54760c87        470MB
+ghcr.io/idaholab/malcolm/nginx-proxy:{{ site.malcolm.version }}                fbda54260ff4        180MB
+ghcr.io/romeogdetlevjr/malcolm/nginx-proxy:main                fbda54260ff4        180MB
+ghcr.io/idaholab/malcolm/strelka-backend:{{ site.malcolm.version }}            fce1c85a5c73       3.63GB
+ghcr.io/romeogdetlevjr/malcolm/strelka-backend:main            fce1c85a5c73       3.63GB
 ```

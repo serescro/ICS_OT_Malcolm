@@ -8,7 +8,7 @@
 
 For a `TL;DR` example of downloading, configuring, and running Malcolm in Docker on a Linux platform, see **[Installation example using Ubuntu 24.04 LTS](ubuntu-install-example.md#InstallationExample)**.
 
-For a more in-depth guide convering installing both Malcolm and a [Hedgehog Linux](hedgehog.md) sensor using the [Malcolm installer ISO](malcolm-iso.md#ISO) and [Hedgehog Linux installer ISO](hedgehog-installation.md#HedgehogInstallation), see **[End-to-end Malcolm and Hedgehog Linux ISO Installation](malcolm-hedgehog-e2e-iso-install.md#InstallationExample)**.
+For a more in-depth guide convering installing both Malcolm and a [Hedgehog Linux](hedgehog.md) sensor using the [Malcolm installer ISO](malcolm-iso.md#ISO) and Hedgehog Linux installer ISO, see **[End-to-end Malcolm and Hedgehog Linux ISO Installation](malcolm-hedgehog-e2e-iso-install.md#InstallationExample)**.
 
 ### Source code
 
@@ -39,7 +39,6 @@ Pulling api               ... done
 Pulling arkime            ... done
 Pulling dashboards        ... done
 Pulling dashboards-helper ... done
-Pulling file-monitor      ... done
 Pulling filebeat          ... done
 Pulling freq              ... done
 Pulling htadmin           ... done
@@ -65,7 +64,6 @@ ghcr.io/idaholab/malcolm/api                                   {{ site.malcolm.v
 ghcr.io/idaholab/malcolm/arkime                                {{ site.malcolm.version }}           xxxxxxxxxxxx   3 days ago   816MB
 ghcr.io/idaholab/malcolm/dashboards                            {{ site.malcolm.version }}           xxxxxxxxxxxx   3 days ago   1.02GB
 ghcr.io/idaholab/malcolm/dashboards-helper                     {{ site.malcolm.version }}           xxxxxxxxxxxx   3 days ago   184MB
-ghcr.io/idaholab/malcolm/file-monitor                          {{ site.malcolm.version }}           xxxxxxxxxxxx   3 days ago   588MB
 ghcr.io/idaholab/malcolm/file-upload                           {{ site.malcolm.version }}           xxxxxxxxxxxx   3 days ago   259MB
 ghcr.io/idaholab/malcolm/filebeat-oss                          {{ site.malcolm.version }}           xxxxxxxxxxxx   3 days ago   624MB
 ghcr.io/idaholab/malcolm/freq                                  {{ site.malcolm.version }}           xxxxxxxxxxxx   3 days ago   132MB
@@ -100,8 +98,4 @@ A few minutes after starting Malcolm (probably 5 or so for Logstash to be comple
 
 ## <a name="DockerVPodman"></a>Docker vs. Podman
 
-Malcolm can run on [Podman](https://podman.io) as a rootless alternative to Docker. When [Running Malcolm](running.md#Running) with Podman, [`podman compose`](https://docs.podman.io/en/latest/markdown/podman-compose.1.html) is used as a wrapper around an external compose provider (such as [`docker-compose`](https://docs.docker.com/compose/) or [`podman-compose`](https://github.com/containers/podman-compose)), which in turn uses the Podman back end to run and orchestrate containers. The same Malcolm runtime scripts (e.g., `./scripts/start`, `./scripts/stop`, etc.) are used whether using Docker or Podman.
-
-As it is a somewhat more advanced procedure, installation and configuration of Podman is not covered in this documentation. Please see the Podman [documentation](https://podman.io/docs/installation).
-
-It should be noted that if rootless Podman is used, Malcolm itself cannot perform [traffic capture on local network interfaces](live-analysis.md#LocalPCAP), although it can accept network traffic metadata forwarded from a [a network sensor appliance](live-analysis.md#Hedgehog).
+Malcolm can run on [Podman](https://podman.io) as a rootless alternative to Docker. See the Linux instructions for [Installing and configuring Podman](host-config-linux.md#HostSystemConfigLinuxPodman) for more information.

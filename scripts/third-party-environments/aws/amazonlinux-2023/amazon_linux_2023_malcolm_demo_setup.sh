@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Copyright (c) 2025 Battelle Energy Alliance, LLC.  All rights reserved.
+# Copyright (c) 2026 Battelle Energy Alliance, LLC.  All rights reserved.
 
 ###################################################################################
 # for setting up a Malcolm demo instance on an Amazon Linux 2023 instance from scratch
@@ -222,11 +222,11 @@ function InstallEnvPackages {
 
     if python3 -m pip -V >/dev/null 2>&1; then
       python3 -m pip install --user -U \
-        dateparser==1.2.1 \
-        kubernetes==32.0.1 \
-        python-dotenv==1.1.0 \
+        dateparser==1.2.2 \
+        kubernetes==34.1.0 \
+        python-dotenv==1.2.1 \
         pythondialog==3.5.3 \
-        mmguero==1.4.4
+        mmguero==2.0.3
     fi
   fi
 
@@ -469,25 +469,28 @@ function SystemConfig {
 kernel.dmesg_restrict=0
 
 # the maximum number of open file handles
-fs.file-max=518144
+fs.file-max=2097152
 
 # the maximum number of user inotify watches
 fs.inotify.max_user_watches=131072
 
-# the maximum number of memory map areas a process may have
-vm.max_map_count=262144
-
 # the maximum number of incoming connections
 net.core.somaxconn=65535
+
+# the maximum number of memory map areas a process may have
+vm.max_map_count=524288
 
 # decrease "swappiness" (swapping out runtime memory vs. dropping pages)
 vm.swappiness=1
 
 # the % of system memory fillable with "dirty" pages before flushing
-vm.dirty_background_ratio=40
+vm.dirty_background_ratio=5
 
 # maximum % of dirty system memory before committing everything
-vm.dirty_ratio=80
+vm.dirty_ratio=10
+
+# virtual memory accounting mode: always overcommit, never check
+vm.overcommit_memory=1
 EOT
     fi # sysctl confirmation
   fi # sysctl check
@@ -588,15 +591,13 @@ function InstallMalcolm {
           | .configuration.zeekICSBestGuess = true
           | .configuration.autoOui = true
           | .configuration.autoFreq = true
-          | .configuration.fileCarveEnabled = true
           | .configuration.fileCarveMode = \"notcommtxt\"
           | .configuration.filePreserveMode = \"quarantined\"
           | .configuration.fileCarveHttpServer = true
           | .configuration.fileCarveHttpServerZip = true
           | .configuration.fileCarveHttpServeEncryptKey = \"infected\"
-          | .configuration.capaScan = true
-          | .configuration.clamAvScan = true
-          | .configuration.yaraScan = true
+          | .configuration.pipelineEnabled = true
+          | .configuration.pipelineWorkers = 1
           | .configuration.netboxMode = \"local\"
           | .configuration.netboxSiteName = \"$(hostname -s)\"
           | .configuration.netboxLogstashEnrich = true

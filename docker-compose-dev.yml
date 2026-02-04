@@ -1,11 +1,11 @@
-# Copyright (c) 2025 Battelle Energy Alliance, LLC.  All rights reserved.
+# Copyright (c) 2026 Battelle Energy Alliance, LLC.  All rights reserved.
 
 services:
   opensearch:
     build:
       context: .
       dockerfile: Dockerfiles/opensearch.Dockerfile
-    image: ghcr.io/idaholab/malcolm/opensearch:25.11.0
+    image: ghcr.io/idaholab/malcolm/opensearch:26.01.0
     # Technically the "hedgehog" profile doesn't have OpenSearch, but in that case
     #   OPENSEARCH_PRIMARY will be set to remote, which means the container will
     #   start but not actually run OpenSearch. It's included in both profiles to
@@ -28,8 +28,6 @@ services:
     - ./config/ssl.env
     - ./config/auth-common.env
     - ./config/opensearch.env
-    environment:
-      VIRTUAL_HOST: 'os.malcolm.local'
     ulimits:
       memlock:
         soft: -1
@@ -84,7 +82,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfiles/dashboards-helper.Dockerfile
-    image: ghcr.io/idaholab/malcolm/dashboards-helper:25.11.0
+    image: ghcr.io/idaholab/malcolm/dashboards-helper:26.01.0
     profiles: ["malcolm"]
     logging:
       driver: local
@@ -105,11 +103,10 @@ services:
     - ./config/netbox-common.env
     - ./config/dashboards.env
     - ./config/dashboards-helper.env
-    environment:
-      VIRTUAL_HOST: 'dashboards-helper.malcolm.local'
     depends_on:
     - opensearch
     volumes:
+    - dashboards-helper-data-init:/data/init
     - type: bind
       bind:
         create_host_path: false
@@ -138,7 +135,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfiles/dashboards.Dockerfile
-    image: ghcr.io/idaholab/malcolm/dashboards:25.11.0
+    image: ghcr.io/idaholab/malcolm/dashboards:26.01.0
     profiles: ["malcolm"]
     logging:
       driver: local
@@ -156,8 +153,6 @@ services:
     - ./config/process.env
     - ./config/ssl.env
     - ./config/opensearch.env
-    environment:
-      VIRTUAL_HOST: 'dashboards.malcolm.local'
     depends_on:
     - opensearch
     - dashboards-helper
@@ -184,7 +179,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfiles/logstash.Dockerfile
-    image: ghcr.io/idaholab/malcolm/logstash-oss:25.11.0
+    image: ghcr.io/idaholab/malcolm/logstash-oss:26.01.0
     profiles: ["malcolm"]
     logging:
       driver: local
@@ -215,6 +210,7 @@ services:
     - ./config/netbox-common.env
     - ./config/netbox.env
     - ./config/netbox-secret.env
+    - ./config/filescan.env
     - ./config/beats-common.env
     - ./config/lookup-common.env
     - ./config/logstash.env
@@ -223,6 +219,7 @@ services:
     ports:
     - 127.0.0.1:5044:5044
     volumes:
+    - logstash-persistent-queue:/logstash-persistent-queue
     - type: bind
       bind:
         create_host_path: false
@@ -299,7 +296,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfiles/filebeat.Dockerfile
-    image: ghcr.io/idaholab/malcolm/filebeat-oss:25.11.0
+    image: ghcr.io/idaholab/malcolm/filebeat-oss:26.01.0
     profiles: ["malcolm", "hedgehog"]
     logging:
       driver: local
@@ -319,12 +316,21 @@ services:
     - ./config/opensearch.env
     - ./config/upload-common.env
     - ./config/nginx.env
+    - ./config/redis.env
+    - ./config/zeek.env
     - ./config/beats-common.env
+    - ./config/netbox-common.env
     - ./config/filebeat.env
     ports:
     - 127.0.0.1:5045:5045
     volumes:
     - nginx-log-path:/nginx:ro
+    - filebeat-logs-registry:/usr/share/filebeat-logs/data
+    - filebeat-nginx-registry:/usr/share/filebeat-nginx/data
+    - filebeat-syslog-tcp-registry:/usr/share/filebeat-syslog-tcp/data
+    - filebeat-syslog-udp-registry:/usr/share/filebeat-syslog-udp/data
+    - filebeat-tcp-registry:/usr/share/filebeat-tcp/data
+    - filebeat-zeek-files-logs-registry:/usr/share/filebeat-zeek-files-logs/data
     - type: bind
       bind:
         create_host_path: false
@@ -347,6 +353,11 @@ services:
         create_host_path: false
       source: ./suricata-logs
       target: /suricata
+    - type: bind
+      bind:
+        create_host_path: false
+      source: ./filescan-logs
+      target: /filescan
     - type: bind
       bind:
         create_host_path: false
@@ -375,7 +386,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfiles/arkime.Dockerfile
-    image: ghcr.io/idaholab/malcolm/arkime:25.11.0
+    image: ghcr.io/idaholab/malcolm/arkime:26.01.0
     profiles: ["malcolm", "hedgehog"]
     logging:
       driver: local
@@ -399,8 +410,6 @@ services:
     - ./config/arkime.env
     - ./config/arkime-offline.env
     - ./config/arkime-secret.env
-    environment:
-      VIRTUAL_HOST: 'arkime.malcolm.local'
     depends_on:
     - opensearch
     volumes:
@@ -466,7 +475,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfiles/arkime.Dockerfile
-    image: ghcr.io/idaholab/malcolm/arkime:25.11.0
+    image: ghcr.io/idaholab/malcolm/arkime:26.01.0
     profiles: ["malcolm", "hedgehog"]
     logging:
       driver: local
@@ -494,7 +503,6 @@ services:
     - ./config/opensearch.env
     - ./config/upload-common.env
     - ./config/pcap-capture.env
-    - ./config/auth.env
     - ./config/arkime.env
     - ./config/arkime-live.env
     - ./config/arkime-secret.env
@@ -562,7 +570,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfiles/zeek.Dockerfile
-    image: ghcr.io/idaholab/malcolm/zeek:25.11.0
+    image: ghcr.io/idaholab/malcolm/zeek:26.01.0
     profiles: ["malcolm", "hedgehog"]
     logging:
       driver: local
@@ -581,7 +589,6 @@ services:
     - ./config/ssl.env
     - ./config/upload-common.env
     - ./config/zeek.env
-    - ./config/zeek-secret.env
     - ./config/zeek-offline.env
     depends_on:
     - opensearch
@@ -611,18 +618,18 @@ services:
       bind:
         create_host_path: false
       source: ./zeek/intel
-      target: /opt/zeek/share/zeek/site/intel
+      target: /usr/local/zeek/share/zeek/site/intel
     - type: bind
       bind:
         create_host_path: false
       source: ./zeek/custom
-      target: /opt/zeek/share/zeek/site/custom
+      target: /usr/local/zeek/share/zeek/site/custom
       read_only: true
     - type: bind
       bind:
         create_host_path: false
       source: ./zeek/config/local.zeek
-      target: /opt/zeek/share/zeek/site/local.zeek
+      target: /usr/local/zeek/share/zeek/site/local.zeek
       read_only: true
     healthcheck:
       test: ["CMD", "/usr/local/bin/container_health.sh"]
@@ -634,7 +641,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfiles/zeek.Dockerfile
-    image: ghcr.io/idaholab/malcolm/zeek:25.11.0
+    image: ghcr.io/idaholab/malcolm/zeek:26.01.0
     profiles: ["malcolm", "hedgehog"]
     logging:
       driver: local
@@ -658,7 +665,6 @@ services:
     - ./config/upload-common.env
     - ./config/pcap-capture.env
     - ./config/zeek.env
-    - ./config/zeek-secret.env
     - ./config/zeek-live.env
     volumes:
     - type: bind
@@ -681,18 +687,18 @@ services:
       bind:
         create_host_path: false
       source: ./zeek/intel
-      target: /opt/zeek/share/zeek/site/intel
+      target: /usr/local/zeek/share/zeek/site/intel
     - type: bind
       bind:
         create_host_path: false
       source: ./zeek/custom
-      target: /opt/zeek/share/zeek/site/custom
+      target: /usr/local/zeek/share/zeek/site/custom
       read_only: true
     - type: bind
       bind:
         create_host_path: false
       source: ./zeek/config/local.zeek
-      target: /opt/zeek/share/zeek/site/local.zeek
+      target: /usr/local/zeek/share/zeek/site/local.zeek
       read_only: true
     healthcheck:
       test: ["CMD", "/usr/local/bin/container_health.sh"]
@@ -704,7 +710,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfiles/suricata.Dockerfile
-    image: ghcr.io/idaholab/malcolm/suricata:25.11.0
+    image: ghcr.io/idaholab/malcolm/suricata:26.01.0
     profiles: ["malcolm", "hedgehog"]
     logging:
       driver: local
@@ -725,6 +731,9 @@ services:
     - ./config/suricata.env
     - ./config/suricata-offline.env
     volumes:
+    - suricata-config:/etc/suricata
+    - suricata-managed:/var/lib/suricata
+    - suricata-run:/var/run/suricata
     - type: bind
       bind:
         create_host_path: false
@@ -763,7 +772,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfiles/suricata.Dockerfile
-    image: ghcr.io/idaholab/malcolm/suricata:25.11.0
+    image: ghcr.io/idaholab/malcolm/suricata:26.01.0
     profiles: ["malcolm", "hedgehog"]
     logging:
       driver: local
@@ -793,6 +802,9 @@ services:
     - ./config/suricata.env
     - ./config/suricata-live.env
     volumes:
+    - suricata-live-config:/etc/suricata
+    - suricata-live-managed:/var/lib/suricata
+    - suricata-live-run:/var/run/suricata
     - type: bind
       bind:
         create_host_path: false
@@ -822,11 +834,11 @@ services:
       timeout: 15s
       retries: 3
       start_period: 120s
-  file-monitor:
+  filescan:
     build:
       context: .
-      dockerfile: Dockerfiles/file-monitor.Dockerfile
-    image: ghcr.io/idaholab/malcolm/file-monitor:25.11.0
+      dockerfile: Dockerfiles/filescan.Dockerfile
+    image: ghcr.io/idaholab/malcolm/filescan:26.01.0
     profiles: ["malcolm", "hedgehog"]
     logging:
       driver: local
@@ -837,7 +849,7 @@ services:
     restart: "no"
     stdin_open: false
     tty: true
-    hostname: file-monitor
+    hostname: filescan
     networks:
     - default
     env_file:
@@ -845,11 +857,13 @@ services:
     - ./config/ssl.env
     - ./config/auth-common.env
     - ./config/dashboards.env
+    - ./config/redis.env
     - ./config/zeek.env
-    - ./config/zeek-secret.env
-    environment:
-      VIRTUAL_HOST: 'file-monitor.malcolm.local'
+    - ./config/pipeline.env
+    - ./config/filescan-secret.env
+    - ./config/filescan.env
     volumes:
+    - filescan-data:/filescan/data
     - type: bind
       bind:
         create_host_path: false
@@ -864,8 +878,62 @@ services:
     - type: bind
       bind:
         create_host_path: false
-      source: ./zeek-logs/current
-      target: /zeek/logs
+      source: ./filescan-logs
+      target: /filescan/data/logs
+    - type: bind
+      bind:
+        create_host_path: false
+      source: ./zeek-logs/extract_files/filescan
+      target: /filescan/data/files
+      read_only: true
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/container_health.sh"]
+      interval: 30s
+      timeout: 15s
+      retries: 3
+      start_period: 60s
+  strelka-backend:
+    build:
+      context: .
+      dockerfile: Dockerfiles/strelka-backend.Dockerfile
+    image: ghcr.io/idaholab/malcolm/strelka-backend:26.01.0
+    profiles: ["malcolm", "hedgehog"]
+    logging:
+      driver: local
+      options:
+        max-size: 200m
+        max-file: 2
+        compress: "false"
+    restart: "no"
+    stdin_open: false
+    tty: true
+    hostname: strelka-backend
+    depends_on:
+    - redis-cache
+    networks:
+    - default
+    env_file:
+    - ./config/process.env
+    - ./config/ssl.env
+    - ./config/redis.env
+    - ./config/pipeline.env
+    shm_size: 512mb
+    volumes:
+    - strelka-backend-clamav-rules:/var/lib/clamav
+    - strelka-backend-yara-rules-src:/yara-rules-src
+    - strelka-backend-yara-rules:/yara-rules
+    - type: bind
+      bind:
+        create_host_path: false
+      source: ./nginx/ca-trust
+      target: /var/local/ca-trust
+      read_only: true
+    - type: bind
+      bind:
+        create_host_path: false
+      source: ./strelka/config/backend/
+      target: /etc/strelka/configmap
+      read_only: true
     - type: bind
       bind:
         create_host_path: false
@@ -878,11 +946,100 @@ services:
       timeout: 15s
       retries: 3
       start_period: 60s
+  strelka-frontend:
+    build:
+      context: .
+      dockerfile: Dockerfiles/strelka-frontend.Dockerfile
+    image: ghcr.io/idaholab/malcolm/strelka-frontend:26.01.0
+    profiles: ["malcolm", "hedgehog"]
+    logging:
+      driver: local
+      options:
+        max-size: 200m
+        max-file: 2
+        compress: "false"
+    restart: "no"
+    stdin_open: false
+    tty: true
+    hostname: strelka-frontend
+    depends_on:
+    - redis-cache
+    networks:
+    - default
+    env_file:
+    - ./config/process.env
+    - ./config/ssl.env
+    - ./config/redis.env
+    - ./config/pipeline.env
+    volumes:
+    - strelka-frontend-logs:/var/log/strelka
+    - type: bind
+      bind:
+        create_host_path: false
+      source: ./nginx/ca-trust
+      target: /var/local/ca-trust
+      read_only: true
+    - type: bind
+      bind:
+        create_host_path: false
+      source: ./strelka/config/frontend/
+      target: /etc/strelka/configmap
+      read_only: true
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/container_health.sh"]
+      interval: 30s
+      timeout: 15s
+      retries: 3
+      start_period: 60s
+  strelka-manager:
+    build:
+      context: .
+      dockerfile: Dockerfiles/strelka-manager.Dockerfile
+    image: ghcr.io/idaholab/malcolm/strelka-manager:26.01.0
+    profiles: ["malcolm", "hedgehog"]
+    logging:
+      driver: local
+      options:
+        max-size: 200m
+        max-file: 2
+        compress: "false"
+    restart: "no"
+    stdin_open: false
+    tty: true
+    hostname: strelka-manager
+    depends_on:
+    - redis-cache
+    networks:
+    - default
+    env_file:
+    - ./config/process.env
+    - ./config/ssl.env
+    - ./config/redis.env
+    - ./config/pipeline.env
+    volumes:
+    - type: bind
+      bind:
+        create_host_path: false
+      source: ./nginx/ca-trust
+      target: /var/local/ca-trust
+      read_only: true
+    - type: bind
+      bind:
+        create_host_path: false
+      source: ./strelka/config/manager/
+      target: /etc/strelka/configmap
+      read_only: true
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/container_health.sh"]
+      interval: 30s
+      timeout: 15s
+      retries: 3
+      start_period: 60s
   pcap-capture:
     build:
       context: .
       dockerfile: Dockerfiles/pcap-capture.Dockerfile
-    image: ghcr.io/idaholab/malcolm/pcap-capture:25.11.0
+    image: ghcr.io/idaholab/malcolm/pcap-capture:26.01.0
     profiles: ["malcolm", "hedgehog"]
     logging:
       driver: local
@@ -935,7 +1092,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfiles/pcap-monitor.Dockerfile
-    image: ghcr.io/idaholab/malcolm/pcap-monitor:25.11.0
+    image: ghcr.io/idaholab/malcolm/pcap-monitor:26.01.0
     profiles: ["malcolm", "hedgehog"]
     logging:
       driver: local
@@ -989,7 +1146,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfiles/file-upload.Dockerfile
-    image: ghcr.io/idaholab/malcolm/file-upload:25.11.0
+    image: ghcr.io/idaholab/malcolm/file-upload:26.01.0
     profiles: ["malcolm"]
     logging:
       driver: local
@@ -1008,8 +1165,6 @@ services:
     - ./config/ssl.env
     - ./config/auth.env
     - ./config/upload-common.env
-    environment:
-      VIRTUAL_HOST: 'upload.malcolm.local'
     ports:
     - 127.0.0.1:8022:22
     volumes:
@@ -1031,7 +1186,7 @@ services:
       retries: 3
       start_period: 60s
   htadmin:
-    image: ghcr.io/idaholab/malcolm/htadmin:25.11.0
+    image: ghcr.io/idaholab/malcolm/htadmin:26.01.0
     profiles: ["malcolm"]
     logging:
       driver: local
@@ -1053,8 +1208,6 @@ services:
     - ./config/ssl.env
     - ./config/auth.env
     - ./config/auth-common.env
-    environment:
-      VIRTUAL_HOST: 'htadmin.malcolm.local'
     volumes:
     - type: bind
       bind:
@@ -1079,7 +1232,7 @@ services:
       retries: 3
       start_period: 60s
   freq:
-    image: ghcr.io/idaholab/malcolm/freq:25.11.0
+    image: ghcr.io/idaholab/malcolm/freq:26.01.0
     profiles: ["malcolm"]
     logging:
       driver: local
@@ -1100,8 +1253,6 @@ services:
     - ./config/process.env
     - ./config/ssl.env
     - ./config/lookup-common.env
-    environment:
-      VIRTUAL_HOST: 'freq.malcolm.local'
     volumes:
     - type: bind
       bind:
@@ -1116,7 +1267,7 @@ services:
       retries: 3
       start_period: 60s
   netbox:
-    image: ghcr.io/idaholab/malcolm/netbox:25.11.0
+    image: ghcr.io/idaholab/malcolm/netbox:26.01.0
     profiles: ["malcolm"]
     logging:
       driver: local
@@ -1142,8 +1293,6 @@ services:
     - ./config/netbox-secret.env
     - ./config/postgres.env
     - ./config/redis.env
-    environment:
-      VIRTUAL_HOST: 'netbox.malcolm.local'
     depends_on:
     - postgres
     - redis
@@ -1185,7 +1334,7 @@ services:
       retries: 3
       start_period: 120s
   postgres:
-    image: ghcr.io/idaholab/malcolm/postgresql:25.11.0
+    image: ghcr.io/idaholab/malcolm/postgresql:26.01.0
     profiles: ["malcolm"]
     logging:
       driver: local
@@ -1207,8 +1356,6 @@ services:
     - ./config/ssl.env
     - ./config/netbox-common.env
     - ./config/postgres.env
-    environment:
-      VIRTUAL_HOST: 'postgres.malcolm.local'
     volumes:
     - type: bind
       bind:
@@ -1228,8 +1375,8 @@ services:
       retries: 3
       start_period: 45s
   redis:
-    image: ghcr.io/idaholab/malcolm/redis:25.11.0
-    profiles: ["malcolm"]
+    image: ghcr.io/idaholab/malcolm/redis:26.01.0
+    profiles: ["malcolm", "hedgehog"]
     logging:
       driver: local
       options:
@@ -1248,14 +1395,11 @@ services:
     env_file:
     - ./config/process.env
     - ./config/ssl.env
-    - ./config/netbox-common.env
     - ./config/redis.env
-    environment:
-      VIRTUAL_HOST: 'redis.malcolm.local'
     command:
     - sh
     - -c
-    - redis-server --appendonly yes --requirepass $$REDIS_PASSWORD
+    - redis-server --dir /data --appendonly yes --requirepass $$REDIS_PASSWORD
     volumes:
     - type: bind
       bind:
@@ -1275,8 +1419,8 @@ services:
       retries: 3
       start_period: 45s
   redis-cache:
-    image: ghcr.io/idaholab/malcolm/redis:25.11.0
-    profiles: ["malcolm"]
+    image: ghcr.io/idaholab/malcolm/redis:26.01.0
+    profiles: ["malcolm", "hedgehog"]
     logging:
       driver: local
       options:
@@ -1295,14 +1439,11 @@ services:
     env_file:
     - ./config/process.env
     - ./config/ssl.env
-    - ./config/netbox-common.env
     - ./config/redis.env
-    environment:
-      VIRTUAL_HOST: 'redis-cache.malcolm.local'
     command:
     - sh
     - -c
-    - redis-server --requirepass $$REDIS_PASSWORD
+    - redis-server --save '' --appendonly no --maxmemory-policy allkeys-lru --requirepass $$REDIS_PASSWORD
     volumes:
     - type: bind
       bind:
@@ -1317,7 +1458,7 @@ services:
       retries: 3
       start_period: 45s
   api:
-    image: ghcr.io/idaholab/malcolm/api:25.11.0
+    image: ghcr.io/idaholab/malcolm/api:26.01.0
     profiles: ["malcolm"]
     logging:
       driver: local
@@ -1342,11 +1483,10 @@ services:
     - ./config/auth-common.env
     - ./config/dashboards.env
     - ./config/arkime.env
+    - ./config/redis.env
     - ./config/netbox-common.env
     - ./config/netbox-secret.env
     - ./config/opensearch.env
-    environment:
-      VIRTUAL_HOST: 'api.malcolm.local'
     volumes:
     - type: bind
       bind:
@@ -1367,7 +1507,7 @@ services:
       retries: 3
       start_period: 60s
   keycloak:
-    image: ghcr.io/idaholab/malcolm/keycloak:25.11.0
+    image: ghcr.io/idaholab/malcolm/keycloak:26.01.0
     profiles: ["malcolm"]
     logging:
       driver: local
@@ -1410,7 +1550,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfiles/nginx.Dockerfile
-    image: ghcr.io/idaholab/malcolm/nginx-proxy:25.11.0
+    image: ghcr.io/idaholab/malcolm/nginx-proxy:26.01.0
     profiles: ["malcolm"]
     logging:
       driver: local
@@ -1439,7 +1579,7 @@ services:
     - api
     - arkime
     - dashboards
-    - file-monitor
+    - filescan
     - htadmin
     - keycloak
     - netbox
@@ -1489,8 +1629,26 @@ services:
       traefik.enable: false
 
 volumes:
-  # shared named volume so filebeat can access nginx access logs
+  dashboards-helper-data-init:
+  filebeat-logs-registry:
+  filebeat-nginx-registry:
+  filebeat-syslog-tcp-registry:
+  filebeat-syslog-udp-registry:
+  filebeat-tcp-registry:
+  filebeat-zeek-files-logs-registry:
+  filescan-data:
+  logstash-persistent-queue:
   nginx-log-path:
+  strelka-backend-clamav-rules:
+  strelka-backend-yara-rules-src:
+  strelka-backend-yara-rules:
+  strelka-frontend-logs:
+  suricata-config:
+  suricata-live-config:
+  suricata-live-managed:
+  suricata-live-run:
+  suricata-managed:
+  suricata-run:
 
 networks:
   default:

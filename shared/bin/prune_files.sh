@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Copyright (c) 2025 Battelle Energy Alliance, LLC.  All rights reserved.
+# Copyright (c) 2026 Battelle Energy Alliance, LLC.  All rights reserved.
 
 function UsagePercentagePwd {
   df -k . 2>/dev/null | awk '{gsub("%",""); capacity=$5}; END {print capacity}'
@@ -63,6 +63,9 @@ if ( [[ -z "$THRESHOLD_PCT" ]] || [[ ! "$THRESHOLD_PCT" =~ $INT_RE ]] || ! (( "$
   echo "Please specify at least one prune trigger: threshold (percentage, 1-100) with -t; or, maximum size (gigabytes, >= 1) with -m" >&2
   exit 1
 fi
+
+[[ -z "$THRESHOLD_PCT" ]] && THRESHOLD_PCT=0
+[[ -z "$MAXSIZE_GB" ]] && MAXSIZE_GB=0
 
 while true ; do
 

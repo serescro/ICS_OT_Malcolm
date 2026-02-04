@@ -17,10 +17,11 @@ spec:
       labels:
         app: arkime-live
         role: capture
+        workload-group: heavy
     spec:
       containers:
       - name: arkime-live-container
-        image: ghcr.io/idaholab/malcolm/arkime:25.11.0
+        image: ghcr.io/idaholab/malcolm/arkime:26.01.0
         imagePullPolicy: Always
         stdin: false
         tty: true
@@ -47,8 +48,6 @@ spec:
               name: upload-common-env
           - configMapRef:
               name: pcap-capture-env
-          - secretRef:
-              name: auth-env
           - configMapRef:
               name: arkime-env
           - configMapRef:
@@ -81,7 +80,7 @@ spec:
             readOnly: true
       initContainers:
       - name: arkime-live-dirinit-container
-        image: ghcr.io/idaholab/malcolm/dirinit:25.11.0
+        image: ghcr.io/idaholab/malcolm/dirinit:26.01.0
         imagePullPolicy: Always
         stdin: false
         tty: true
